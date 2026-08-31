@@ -1,0 +1,43 @@
+{
+    "admin": [
+        "id (int(11))",
+        "username (varchar(50))",
+        "password (varchar(255))",
+        "nama_lengkap (varchar(100))",
+        "role (enum('Admin','Dokter'))"
+    ],
+    "jadwal_dokter": [
+        "id (int(11))",
+        "nama_dokter (varchar(100))",
+        "hari (varchar(20))",
+        "jam_mulai (time)",
+        "jam_selesai (time)",
+        "status (enum('Praktek','Libur'))"
+    ],
+    "antrian": [
+        "id (int(11))",
+        "id_pasien (int(11))",
+        "id_jadwal (int(11))",
+        "no_antrian (int(11))",
+        "nama_pendaftar (varchar(100))",
+        "keluhan (text)",
+        "status (enum('Menunggu','Dilayani','Selesai'))",
+        "waktu_daftar (timestamp)"
+    ],
+    "admin_data": [
+        {
+            "id": "1",
+            "username": "admin",
+            "password": "admin123",
+            "nama_lengkap": "Petugas Klinik",
+            "role": "Admin"
+        },
+        {
+            "id": "2",
+            "username": "dokter",
+            "password": "dokter123",
+            "nama_lengkap": "Dokter Spesialis Gigi",
+            "role": "Dokter"
+        }
+    ]
+}

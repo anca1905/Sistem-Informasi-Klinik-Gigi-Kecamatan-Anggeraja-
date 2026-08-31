@@ -1,0 +1,239 @@
+/* --- RESET & VARIABEL --- */
+:root {
+    --hijau-tua: #059669;
+    --hijau-muda: #34d399;
+    --putih-tulang: #f9fafb;
+    --kuning-aksi: #f59e0b;
+    --teks-gelap: #1f2937;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--teks-gelap);
+    background-color: var(--putih-tulang);
+    overflow-x: hidden;
+}
+
+/* --- NAVBAR --- */
+header {
+    background: linear-gradient(90deg, var(--hijau-tua), var(--hijau-muda));
+    padding: 15px 0;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    margin: auto;
+}
+
+.logo {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: 500;
+    transition: 0.3s;
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+
+.menu a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-login {
+    background-color: white;
+    color: var(--hijau-tua) !important;
+    font-weight: bold !important;
+}
+
+/* --- HERO SECTION (BAGIAN ATAS) --- */
+.hero {
+    /* Gambar background diganti dengan pola atau gambar medis yang lebih terang */
+    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8)), url('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    height: 90vh;
+    /* Layar penuh */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 20px;
+    position: relative;
+}
+
+.hero-content {
+    max-width: 800px;
+    animation: munculKeatas 1s ease-out;
+}
+
+.badge {
+    background-color: #d1fae5;
+    color: var(--hijau-tua);
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 15px;
+    border: 1px solid var(--hijau-muda);
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    margin: 10px 0 20px 0;
+    line-height: 1.2;
+    color: var(--hijau-tua);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #4b5563;
+}
+
+.cta-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-utama {
+    background: linear-gradient(45deg, var(--hijau-tua), var(--hijau-muda));
+    color: white;
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
+    transition: transform 0.3s;
+}
+
+.btn-cek {
+    background: white;
+    color: var(--hijau-tua);
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: 2px solid var(--hijau-tua);
+    transition: 0.3s;
+}
+
+.btn-utama:hover,
+.btn-cek:hover {
+    transform: translateY(-5px);
+}
+
+/* --- FITUR SECTION --- */
+.features {
+    padding: 80px 20px;
+    background: white;
+    text-align: center;
+}
+
+.features h2 {
+    color: var(--hijau-tua);
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+}
+
+.grid-fitur {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    width: 300px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: 0.3s;
+    border-top: 5px solid var(--hijau-muda);
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    border-top: 5px solid var(--kuning-aksi);
+}
+
+.emoji-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.card h3 {
+    color: var(--teks-gelap);
+}
+
+.card p {
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+/* --- FOOTER --- */
+footer {
+    background: var(--teks-gelap);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+/* Animasi kecil */
+@keyframes munculKeatas {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Mobile */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    /* Nanti bisa tambah menu burger */
+    .grid-fitur {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .cta-group {
+        flex-direction: column;
+    }
+}
