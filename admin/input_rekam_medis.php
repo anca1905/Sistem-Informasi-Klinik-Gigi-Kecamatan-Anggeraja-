@@ -26,10 +26,11 @@ if (isset($_POST['simpan_rm'])) {
     $tgl_kunjungan_kembali = !empty($_POST['tgl_kunjungan_kembali']) ? $_POST['tgl_kunjungan_kembali'] : NULL;
 
     // 1. Simpan ke tabel rekam_medis
+    $id_pasien = $data['id_pasien'];
     if ($tgl_kunjungan_kembali) {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat, kunjungan_berikutnya) VALUES ('0', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep', '$tgl_kunjungan_kembali')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep', '$tgl_kunjungan_kembali')");
     } else {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat) VALUES ('0', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat) VALUES ('$id_pasien', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep')");
     }
     $id_rm_baru = mysqli_insert_id($koneksi);
 
