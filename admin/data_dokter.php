@@ -96,7 +96,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM dokter ORDER BY id_dokter ASC");
                 <?php $no = 1;
                 while ($row = mysqli_fetch_assoc($query)): ?>
                     <?php
-                    $q_jdwl = mysqli_query($koneksi, "SELECT hari, jam_mulai, jam_selesai FROM jadwal_dokter WHERE id_dokter=" . $row['id_dokter'] . " AND status='Aktif'");
+                    $q_jdwl = mysqli_query($koneksi, "SELECT hari, jam_mulai, jam_selesai FROM jadwal_dokter WHERE id_dokter=" . $row['id_dokter'] . " AND status='Praktek'");
                     $jadwal_list = [];
                     while ($jdwl = mysqli_fetch_assoc($q_jdwl)) {
                         $jadwal_list[] = $jdwl['hari'] . ' ' . substr($jdwl['jam_mulai'], 0, 5) . '-' . substr($jdwl['jam_selesai'], 0, 5);

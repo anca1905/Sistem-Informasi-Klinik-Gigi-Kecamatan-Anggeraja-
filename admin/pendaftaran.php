@@ -15,7 +15,7 @@ $pesan_type = '';
 $query_dokter = mysqli_query($koneksi, "SELECT d.id_dokter, d.nama_dokter, j.id AS id_jadwal, j.hari, j.jam_mulai, j.jam_selesai
     FROM dokter d
     JOIN jadwal_dokter j ON j.id_dokter = d.id_dokter
-    WHERE j.status = 'Aktif'
+    WHERE j.status = 'Praktek'
     ORDER BY j.hari, d.nama_dokter");
 
 // Proses Form Pendaftaran
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Query ulang dokter setelah POST
     $query_dokter = mysqli_query($koneksi, "SELECT d.id_dokter, d.nama_dokter, j.id AS id_jadwal, j.hari, j.jam_mulai, j.jam_selesai
         FROM dokter d JOIN jadwal_dokter j ON j.id_dokter = d.id_dokter
-        WHERE j.status = 'Aktif' ORDER BY j.hari, d.nama_dokter");
+        WHERE j.status = 'Praktek' ORDER BY j.hari, d.nama_dokter");
 }
 ?>
 <?php include "../layout/header.php" ?>
