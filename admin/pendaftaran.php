@@ -45,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Buat kode RM baru
             $total_pasien = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM pasien")) + 1;
             $kode_rm = 'RM' . str_pad($total_pasien, 4, '0', STR_PAD_LEFT);
-            mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, no_telepon) 
-                VALUES ('$kode_rm', '$nama', '$tgl_l', '$jenis', '$telp')");
+            mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, no_telepon, nik, alamat) 
+                VALUES ('$kode_rm', '$nama', '$tgl_l', '$jenis', '$telp', '', '')");
             $id_pasien = mysqli_insert_id($koneksi);
         }
 
