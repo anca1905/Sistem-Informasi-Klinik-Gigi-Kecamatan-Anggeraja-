@@ -54,6 +54,22 @@ ALTER TABLE `rekam_medis`
   ADD COLUMN `tindakan` TEXT NULL AFTER `diagnosa`,
   ADD CONSTRAINT `fk_rekam_dokter` FOREIGN KEY (`id_dokter`) REFERENCES `dokter`(`id_dokter`) ON DELETE SET NULL ON UPDATE CASCADE;
 
+-- ------------------------------------------------------------
+-- 6. Buat tabel TRANSAKSI (baru) - Fitur Pembayaran Pasien
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `transaksi` (
+  `id_transaksi`       INT AUTO_INCREMENT PRIMARY KEY,
+  `id_antrian`         INT NOT NULL,
+  `id_rekam_medis`     INT NULL,
+  `nama_pasien`        VARCHAR(100) NOT NULL,
+  `tindakan`           TEXT NULL,
+  `biaya`              DECIMAL(15,2) NOT NULL DEFAULT 0,
+  `metode_bayar`       ENUM('Tunai','Transfer','BPJS') NOT NULL DEFAULT 'Tunai',
+  `status_bayar`       ENUM('Belum Bayar','Lunas') NOT NULL DEFAULT 'Belum Bayar',
+  `tanggal_transaksi`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`id_antrian`) REFERENCES `antrian`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ============================================================
 -- SELESAI
 -- ============================================================

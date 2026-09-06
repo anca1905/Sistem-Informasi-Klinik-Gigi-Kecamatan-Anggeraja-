@@ -17,28 +17,33 @@ $data = mysqli_fetch_array($query);
 
 // Jika tombol Simpan ditekan
 if (isset($_POST['simpan_rm'])) {
-    $nama_pasien = $data['nama_pendaftar']; // Kita ambil nama dari data antrian
-    $keluhan = $data['keluhan'];
-    $diagnosa = htmlspecialchars($_POST['diagnosa']);
-    $resep = htmlspecialchars($_POST['resep']);
-    $tgl = date('Y-m-d');
+    $nama_pasien = mysqli_real_escape_string($koneksi, $data['nama_pendaftar']);
+    $keluhan     = mysqli_real_escape_string($koneksi, $data['keluhan']);
+    $diagnosa    = mysqli_real_escape_string($koneksi, $_POST['diagnosa']);
+    $resep       = mysqli_real_escape_string($koneksi, $_POST['resep']);
+    $tgl         = date('Y-m-d');
 
     $tgl_kunjungan_kembali = !empty($_POST['tgl_kunjungan_kembali']) ? $_POST['tgl_kunjungan_kembali'] : NULL;
 
     // 1. Simpan ke tabel rekam_medis
-    // Catatan: id_pasien kita set 0 dulu atau sesuaikan jika sudah ada master data pasien. 
-    // Disini kita simpan text diagnosa dan resepnya.
     if ($tgl_kunjungan_kembali) {
         $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat, kunjungan_berikutnya) VALUES ('0', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep', '$tgl_kunjungan_kembali')");
     } else {
         $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat) VALUES ('0', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep')");
     }
+    $id_rm_baru = mysqli_insert_id($koneksi);
 
     // 2. Update status antrian jadi 'Selesai'
     $update = mysqli_query($koneksi, "UPDATE antrian SET status='Selesai' WHERE id='$id_antrian'");
 
+    // 3. Buat transaksi otomatis (status Belum Bayar) lalu arahkan ke form transaksi
     if ($insert && $update) {
-        echo "<script>alert('Rekam Medis Berhasil Disimpan!'); window.location='dashboard.php';</script>";
+        $cek_trx = mysqli_query($koneksi, "SELECT id_transaksi FROM transaksi WHERE id_antrian='$id_antrian' LIMIT 1");
+        if (mysqli_num_rows($cek_trx) == 0) {
+            mysqli_query($koneksi, "INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, status_bayar) VALUES ('$id_antrian', '$id_rm_baru', '$nama_pasien', '$diagnosa', 0, 'Belum Bayar')");
+        }
+        header("location:tambah_transaksi.php?id_antrian=$id_antrian");
+        exit();
     } else {
         echo "<script>alert('Gagal menyimpan data');</script>";
     }

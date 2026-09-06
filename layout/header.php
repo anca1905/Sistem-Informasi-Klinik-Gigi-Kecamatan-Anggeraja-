@@ -53,12 +53,16 @@
                 <a href="jadwal_praktik.php" class="menu-link <?php echo ($current_page == 'jadwal_praktik.php') ? 'active' : ''; ?>">
                     <i class="fas fa-calendar-alt"></i> Jadwal Praktik
                 </a>
+                <a href="transaksi.php" class="menu-link <?php echo (in_array($current_page, ['transaksi.php', 'tambah_transaksi.php', 'konfirmasi_bayar.php', 'cetak_struk_bayar.php'])) ? 'active' : ''; ?>">
+                    <i class="fas fa-cash-register"></i> Transaksi
+                </a>
             <?php endif; ?>
 
             <a href="laporan.php" class="menu-link <?php echo ($current_page == 'laporan.php') ? 'active' : ''; ?>">
                 <i class="fas fa-file-alt"></i> Laporan
             </a>
         </div>
+
 
         <div class="sidebar-footer">
             <a href="../auth/logout.php" class="btn-logout">
