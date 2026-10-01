@@ -66,6 +66,11 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
         <?php echo $tab == 'pembayaran' ? 'background:#064e3b;color:white;' : 'background:#f3f4f6;color:#374151;'; ?>">
         <i class="fas fa-cash-register"></i> Laporan Pembayaran
     </a>
+    <a href="laporan.php?tab=pasien&tanggal=<?php echo urlencode($filter_tgl); ?>"
+        style="padding:10px 20px;border-radius:8px 8px 0 0;text-decoration:none;font-weight:600;font-size:.875rem;
+        <?php echo $tab == 'pasien' ? 'background:#064e3b;color:white;' : 'background:#f3f4f6;color:#374151;'; ?>">
+        <i class="fas fa-users"></i> Daftar Pasien
+    </a>
 </div>
 
 <!-- Filter -->
@@ -82,9 +87,19 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
             <a href="laporan.php?tab=<?php echo $tab; ?>" class="btn" style="background:#f3f4f6;color:#374151;">Semua Data</a>
         <?php endif; ?>
         <?php if ($tab == 'pemeriksaan' && mysqli_num_rows($query_rm) > 0): ?>
-            <a href="cetak_laporan.php?tanggal=<?php echo urlencode($filter_tgl); ?>" target="_blank"
+            <a href="cetak_laporan.php?tab=pemeriksaan&tanggal=<?php echo urlencode($filter_tgl); ?>" target="_blank"
                 class="btn" style="background:#064e3b;color:white;margin-left:auto;">
                 <i class="fas fa-print"></i> Cetak
+            </a>
+        <?php elseif ($tab == 'pembayaran' && mysqli_num_rows($query_trx) > 0): ?>
+            <a href="cetak_laporan.php?tab=pembayaran&tanggal=<?php echo urlencode($filter_tgl); ?>" target="_blank"
+                class="btn" style="background:#064e3b;color:white;margin-left:auto;">
+                <i class="fas fa-print"></i> Cetak Pembayaran
+            </a>
+        <?php elseif ($tab == 'pasien'): ?>
+            <a href="cetak_laporan.php?tab=pasien&tanggal=<?php echo urlencode($filter_tgl); ?>" target="_blank"
+                class="btn" style="background:#064e3b;color:white;margin-left:auto;">
+                <i class="fas fa-print"></i> Cetak Daftar Pasien
             </a>
         <?php endif; ?>
     </form>
@@ -124,7 +139,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                                 <td style="color:#059669;font-weight:500;"><?php echo htmlspecialchars($row['tindakan'] ?? '-'); ?></td>
                             </tr>
                         <?php endwhile; ?>
-                    <?php else: ?>
+                    <?php elseif ($tab == 'pembayaran'): ?>
                         <tr>
                             <td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;">
                                 <i class="fas fa-file-medical-alt" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
@@ -137,7 +152,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
         </div>
     </div>
 
-<?php else: ?>
+<?php elseif ($tab == 'pembayaran'): ?>
     <!-- ===== TAB PEMBAYARAN ===== -->
 
     <!-- Ringkasan -->
@@ -187,7 +202,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                                 <td>
                                     <?php if ($row['status_bayar'] == 'Lunas'): ?>
                                         <span class="badge badge-done">Lunas</span>
-                                    <?php else: ?>
+                                    <?php elseif ($tab == 'pembayaran'): ?>
                                         <span class="badge badge-waiting">Belum Bayar</span>
                                     <?php endif; ?>
                                 </td>
@@ -205,6 +220,69 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
             </table>
         </div>
     </div>
+<?php elseif ($tab == 'pasien'): 
+    // ---- Query Pasien ----
+    $where_pasien = '';
+    if ($filter_tgl != '') {
+        // Asumsi kita menggunakan tanggal_lahir atau tidak menggunakan filter tanggal untuk pasien. 
+        // Jika tidak relevan, kita bisa skip filter_tgl untuk pasien atau menggunakan tanggal registrasi jika ada.
+        // Karena tidak ada tanggal registrasi di kolom, kita tampilkan semua atau biarkan filter kosong.
+    }
+    $query_pasien = mysqli_query($koneksi, "
+        SELECT * FROM pasien 
+        ORDER BY id DESC
+    ");
+?>
+    <!-- ===== TAB PASIEN ===== -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3 style="font-size:1rem;color:#374151;">
+                <i class="fas fa-users" style="margin-right:8px;"></i>
+                Laporan Daftar Pasien
+            </h3>
+            <span class="badge badge-done"><?php echo mysqli_num_rows($query_pasien); ?> Data</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Kode Pasien</th>
+                        <th>NIK</th>
+                        <th>Nama Pasien</th>
+                        <th>Jenis Kelamin</th>
+                        <th>Tanggal Lahir</th>
+                        <th>No Telepon</th>
+                        <th>Alamat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (mysqli_num_rows($query_pasien) > 0): $no = 1;
+                        while ($row = mysqli_fetch_assoc($query_pasien)): ?>
+                            <tr>
+                                <td><?php echo $no++; ?></td>
+                                <td><span class="queue-number"><?php echo htmlspecialchars($row['kode_pasien']); ?></span></td>
+                                <td><?php echo htmlspecialchars($row['nik']); ?></td>
+                                <td><strong><?php echo htmlspecialchars($row['nama']); ?></strong></td>
+                                <td><?php echo htmlspecialchars($row['jenis_kelamin']); ?></td>
+                                <td><?php echo date('d-m-Y', strtotime($row['tanggal_lahir'])); ?></td>
+                                <td><?php echo htmlspecialchars($row['no_telepon']); ?></td>
+                                <td><?php echo htmlspecialchars($row['alamat']); ?></td>
+                            </tr>
+                        <?php endwhile;
+                    else: ?>
+                        <tr>
+                            <td colspan="8" style="text-align:center;padding:40px;color:#9ca3af;">
+                                <i class="fas fa-users" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                                Belum ada data pasien.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 <?php endif; ?>
 
 <?php include "../layout/footer.php" ?>

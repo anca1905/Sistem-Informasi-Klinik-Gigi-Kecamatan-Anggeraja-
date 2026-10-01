@@ -25,8 +25,21 @@ if (isset($_POST['simpan_rm'])) {
 
     $tgl_kunjungan_kembali = !empty($_POST['tgl_kunjungan_kembali']) ? $_POST['tgl_kunjungan_kembali'] : NULL;
 
-    // 1. Simpan ke tabel rekam_medis
+    // 1. Cek atau Buat Pasien Jika Belum Ada (Untuk Antrian Lama)
     $id_pasien = $data['id_pasien'];
+    if (empty($id_pasien)) {
+        $nama_pendaftar_safe = mysqli_real_escape_string($koneksi, $data['nama_pendaftar']);
+        $total_pasien = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM pasien")) + 1;
+        $kode_rm = 'RM' . str_pad($total_pasien, 4, '0', STR_PAD_LEFT);
+        mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, no_telepon, nik, alamat) 
+            VALUES ('$kode_rm', '$nama_pendaftar_safe', '2000-01-01', 'Laki-laki', '', '', '')");
+        $id_pasien = mysqli_insert_id($koneksi);
+        
+        // Update antrian agar kedepannya id_pasien tidak kosong
+        mysqli_query($koneksi, "UPDATE antrian SET id_pasien = '$id_pasien' WHERE id = '$id_antrian'");
+    }
+
+    // 2. Simpan ke tabel rekam_medis
     if ($tgl_kunjungan_kembali) {
         $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep', '$tgl_kunjungan_kembali')");
     } else {
@@ -37,7 +50,63 @@ if (isset($_POST['simpan_rm'])) {
     // 2. Update status antrian jadi 'Selesai'
     $update = mysqli_query($koneksi, "UPDATE antrian SET status='Selesai' WHERE id='$id_antrian'");
 
-    // 3. Buat transaksi otomatis (status Belum Bayar) lalu arahkan ke form transaksi
+    // 3. Buat Surat Kontrol PDF & Kirim WhatsApp
+    if ($tgl_kunjungan_kembali) {
+        // Ambil data pasien untuk nomor WA
+        $q_pasien = mysqli_query($koneksi, "SELECT no_telepon FROM pasien WHERE id='$id_pasien'");
+        $d_pasien = mysqli_fetch_array($q_pasien);
+        $no_wa = $d_pasien['no_telepon'];
+
+        if ($no_wa) {
+            // Generate PDF menggunakan FPDF
+            require_once('../assets/fpdf/fpdf.php');
+            $pdf = new FPDF();
+            $pdf->AddPage();
+            $pdf->SetFont('Arial', 'B', 16);
+            $pdf->Cell(190, 10, 'SURAT KONTROL KLINIK GIGI ANGGERAJA', 0, 1, 'C');
+            $pdf->Ln(10);
+            $pdf->SetFont('Arial', '', 12);
+            $pdf->Cell(50, 10, 'Nama Pasien', 0, 0);
+            $pdf->Cell(5, 10, ':', 0, 0);
+            $pdf->Cell(100, 10, $nama_pasien, 0, 1);
+            $pdf->Cell(50, 10, 'Tanggal Periksa', 0, 0);
+            $pdf->Cell(5, 10, ':', 0, 0);
+            $pdf->Cell(100, 10, date('d-m-Y', strtotime($tgl)), 0, 1);
+            $pdf->Cell(50, 10, 'Jadwal Kontrol', 0, 0);
+            $pdf->Cell(5, 10, ':', 0, 0);
+            $pdf->Cell(100, 10, date('d-m-Y', strtotime($tgl_kunjungan_kembali)), 0, 1);
+            $pdf->Ln(10);
+            $pdf->MultiCell(190, 10, "Harap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami.");
+            
+            // Buat folder jika belum ada
+            if (!is_dir('../assets/surat_kontrol')) {
+                mkdir('../assets/surat_kontrol', 0777, true);
+            }
+            $pdf_filename = "Surat_Kontrol_" . str_replace(" ", "_", $nama_pasien) . "_" . time() . ".pdf";
+            $pdf_path = __DIR__ . "/../assets/surat_kontrol/" . $pdf_filename;
+            $pdf->Output('F', $pdf_path);
+
+            // Kirim ke WhatsApp API
+            $message = "Halo *$nama_pasien*, berikut adalah Surat Kontrol Anda dari Klinik Gigi Anggeraja. Jangan lupa untuk kontrol pada tanggal *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.";
+            $url = "http://127.0.0.1:3001/send-message";
+            $data_api = array(
+                "number" => $no_wa,
+                "message" => $message,
+                "pdf_path" => $pdf_path
+            );
+            $options = array(
+                'http' => array(
+                    'header'  => "Content-type: application/json\r\n",
+                    'method'  => 'POST',
+                    'content' => json_encode($data_api)
+                )
+            );
+            $context  = stream_context_create($options);
+            @file_get_contents($url, false, $context);
+        }
+    }
+
+    // 4. Buat transaksi otomatis (status Belum Bayar) lalu arahkan ke form transaksi
     if ($insert && $update) {
         $cek_trx = mysqli_query($koneksi, "SELECT id_transaksi FROM transaksi WHERE id_antrian='$id_antrian' LIMIT 1");
         if (mysqli_num_rows($cek_trx) == 0) {

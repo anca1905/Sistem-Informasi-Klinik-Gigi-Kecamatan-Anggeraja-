@@ -34,6 +34,7 @@
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
 
+            <?php if ($role_active == 'Admin' || $role_active == 'Dokter'): ?>
             <a href="pendaftaran.php" class="menu-link <?php echo ($current_page == 'pendaftaran.php') ? 'active' : ''; ?>">
                 <i class="fas fa-clipboard-list"></i> Pendaftaran
             </a>
@@ -45,6 +46,7 @@
             <a href="data_pasien.php" class="menu-link <?php echo (in_array($current_page, ['data_pasien.php', 'tambah_pasien.php', 'edit_pasien.php'])) ? 'active' : ''; ?>">
                 <i class="fas fa-user-injured"></i> Pasien
             </a>
+            <?php endif; ?>
 
             <?php if ($role_active == 'Admin'): ?>
                 <a href="data_dokter.php" class="menu-link <?php echo (in_array($current_page, ['data_dokter.php', 'tambah_dokter.php', 'edit_dokter.php'])) ? 'active' : ''; ?>">
@@ -56,11 +58,16 @@
                 <a href="transaksi.php" class="menu-link <?php echo (in_array($current_page, ['transaksi.php', 'tambah_transaksi.php', 'konfirmasi_bayar.php', 'cetak_struk_bayar.php'])) ? 'active' : ''; ?>">
                     <i class="fas fa-cash-register"></i> Transaksi
                 </a>
+                <a href="wa_bot.php" class="menu-link <?php echo ($current_page == 'wa_bot.php') ? 'active' : ''; ?>">
+                    <i class="fab fa-whatsapp"></i> WhatsApp Bot
+                </a>
             <?php endif; ?>
 
+            <?php if ($role_active == 'Admin' || $role_active == 'Manajer Klinik'): ?>
             <a href="laporan.php" class="menu-link <?php echo ($current_page == 'laporan.php') ? 'active' : ''; ?>">
                 <i class="fas fa-file-alt"></i> Laporan
             </a>
+            <?php endif; ?>
         </div>
 
 

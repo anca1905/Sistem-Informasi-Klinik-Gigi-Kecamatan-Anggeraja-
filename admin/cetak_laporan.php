@@ -2,21 +2,44 @@
 include '../config/koneksi.php';
 
 // Ambil data dari Form Filter
-$jenis = $_GET['jenis'];
-$tgl_awal = $_GET['tgl_awal'];
-$tgl_akhir = $_GET['tgl_akhir'];
+$jenis = isset($_GET['jenis']) ? $_GET['jenis'] : '';
+$tab = isset($_GET['tab']) ? $_GET['tab'] : '';
 
-// Validasi Query berdasarkan jenis laporan
+$tgl_awal = isset($_GET['tgl_awal']) ? $_GET['tgl_awal'] : '';
+$tgl_akhir = isset($_GET['tgl_akhir']) ? $_GET['tgl_akhir'] : '';
+$tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : '';
+
+// Validasi Query berdasarkan jenis/tab laporan
 if ($jenis == 'antrian') {
     $judul = "LAPORAN KUNJUNGAN PASIEN";
     $query = mysqli_query($koneksi, "SELECT * FROM antrian WHERE DATE(waktu_daftar) BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY waktu_daftar ASC");
 } elseif ($jenis == 'kunjungan_berikutnya') {
     $judul = "LAPORAN JADWAL KUNJUNGAN BERIKUTNYA";
     $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis WHERE kunjungan_berikutnya BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY kunjungan_berikutnya ASC");
+} elseif ($tab == 'pemeriksaan') {
+    $judul = "LAPORAN PEMERIKSAAN" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
+    $where = $tanggal ? "WHERE DATE(rm.tanggal_periksa) = '$tanggal'" : "";
+    $query = mysqli_query($koneksi, "SELECT rm.*, p.nama AS nama_pasien FROM rekam_medis rm LEFT JOIN pasien p ON rm.id_pasien = p.id $where ORDER BY rm.tanggal_periksa ASC");
+} elseif ($tab == 'pembayaran') {
+    $judul = "LAPORAN PEMBAYARAN" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
+    $where = $tanggal ? "WHERE DATE(t.tanggal_transaksi) = '$tanggal'" : "";
+    $query = mysqli_query($koneksi, "SELECT t.*, a.no_antrian FROM transaksi t LEFT JOIN antrian a ON t.id_antrian = a.id $where ORDER BY t.tanggal_transaksi ASC");
+} elseif ($tab == 'pasien') {
+    $judul = "LAPORAN DAFTAR PASIEN";
+    $query = mysqli_query($koneksi, "SELECT * FROM pasien ORDER BY id ASC");
 } else {
     $judul = "LAPORAN REKAM MEDIS";
     // Disini kita ambil data dari rekam medis (nanti bisa di JOIN dengan pasien kalo ada)
     $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis WHERE tanggal_periksa BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY tanggal_periksa ASC");
+}
+
+$periode_text = "";
+if ($tgl_awal && $tgl_akhir) {
+    $periode_text = date('d-m-Y', strtotime($tgl_awal)) . " s/d " . date('d-m-Y', strtotime($tgl_akhir));
+} elseif ($tanggal) {
+    $periode_text = date('d-m-Y', strtotime($tanggal));
+} else {
+    $periode_text = "Semua Data";
 }
 ?>
 
@@ -114,7 +137,7 @@ if ($jenis == 'antrian') {
 
     <div class="info-laporan">
         <strong>Perihal:</strong> <?php echo $judul; ?><br>
-        <strong>Periode:</strong> <?php echo date('d-m-Y', strtotime($tgl_awal)); ?> s/d <?php echo date('d-m-Y', strtotime($tgl_akhir)); ?>
+        <strong>Periode:</strong> <?php echo $periode_text; ?>
     </div>
 
     <table>
@@ -136,20 +159,41 @@ if ($jenis == 'antrian') {
                     <th>Jadwal Kunjungan Berikutnya</th>
                     <th>Keluhan / Diagnosa</th>
                 </tr>
-            <?php } else { ?>
+            <?php } elseif ($tab == 'pemeriksaan' || $jenis == '') { ?>
                 <tr>
                     <th width="5%">No</th>
                     <th>Tanggal Periksa</th>
+                    <th>Pasien</th>
                     <th>Keluhan</th>
                     <th>Diagnosa</th>
                     <th>Resep Obat</th>
+                </tr>
+            <?php } elseif ($tab == 'pembayaran') { ?>
+                <tr>
+                    <th width="5%">No</th>
+                    <th>Tanggal</th>
+                    <th>No. Antrian</th>
+                    <th>Nama Pasien</th>
+                    <th>Biaya</th>
+                    <th>Metode</th>
+                    <th>Status</th>
+                </tr>
+            <?php } elseif ($tab == 'pasien') { ?>
+                <tr>
+                    <th width="5%">No</th>
+                    <th>Kode</th>
+                    <th>NIK</th>
+                    <th>Nama Pasien</th>
+                    <th>L/P</th>
+                    <th>Tanggal Lahir</th>
+                    <th>No. Telepon</th>
                 </tr>
             <?php } ?>
         </thead>
         <tbody>
             <?php
             $no = 1;
-            if (mysqli_num_rows($query) > 0) {
+            if ($query && mysqli_num_rows($query) > 0) {
                 while ($row = mysqli_fetch_array($query)) {
             ?>
                     <tr>
@@ -168,18 +212,35 @@ if ($jenis == 'antrian') {
                             <td style="text-align: center; font-weight: bold;"><?php echo date('d-m-Y', strtotime($row['kunjungan_berikutnya'])); ?></td>
                             <td><?php echo "<b>Keluhan:</b> " . $row['keluhan'] . "<br><b>Diagnosa:</b> " . $row['diagnosa']; ?></td>
 
-                        <?php } else { ?>
+                        <?php } elseif ($tab == 'pemeriksaan' || $jenis == '') { ?>
                             <td style="text-align: center;"><?php echo date('d-m-Y', strtotime($row['tanggal_periksa'])); ?></td>
+                            <td><?php echo htmlspecialchars($row['nama_pasien'] ?? '-'); ?></td>
                             <td><?php echo $row['keluhan']; ?></td>
                             <td><?php echo $row['diagnosa']; ?></td>
                             <td><?php echo $row['resep_obat']; ?></td>
+                        
+                        <?php } elseif ($tab == 'pembayaran') { ?>
+                            <td style="text-align: center;"><?php echo date('d-m-Y H:i', strtotime($row['tanggal_transaksi'])); ?></td>
+                            <td style="text-align: center;"><?php echo $row['no_antrian']; ?></td>
+                            <td><?php echo htmlspecialchars($row['nama_pasien']); ?></td>
+                            <td>Rp <?php echo number_format($row['biaya'], 0, ',', '.'); ?></td>
+                            <td><?php echo $row['metode_bayar']; ?></td>
+                            <td><?php echo $row['status_bayar']; ?></td>
+                        
+                        <?php } elseif ($tab == 'pasien') { ?>
+                            <td style="text-align: center;"><?php echo htmlspecialchars($row['kode_pasien']); ?></td>
+                            <td><?php echo htmlspecialchars($row['nik']); ?></td>
+                            <td><?php echo htmlspecialchars($row['nama']); ?></td>
+                            <td style="text-align: center;"><?php echo htmlspecialchars($row['jenis_kelamin'] == 'Laki-laki' ? 'L' : ($row['jenis_kelamin'] == 'Perempuan' ? 'P' : '-')); ?></td>
+                            <td style="text-align: center;"><?php echo date('d-m-Y', strtotime($row['tanggal_lahir'])); ?></td>
+                            <td><?php echo htmlspecialchars($row['no_telepon']); ?></td>
                         <?php } ?>
 
                     </tr>
             <?php
                 }
             } else {
-                echo "<tr><td colspan='6' style='text-align:center; padding: 20px;'>Tidak ada data pada periode ini.</td></tr>";
+                echo "<tr><td colspan='10' style='text-align:center; padding: 20px;'>Tidak ada data pada periode ini.</td></tr>";
             }
             ?>
         </tbody>
