@@ -12,20 +12,53 @@ $nomor_antrian = $urutan;
 // Variabel notifikasi
 $notif_sukses = false;
 $notif_gagal = false;
+$id_terbaru = 0;
+
+// Ambil daftar dokter untuk dropdown
+$query_dokter = mysqli_query($koneksi, "SELECT d.id_dokter, d.nama_dokter, j.id AS id_jadwal, j.hari, j.jam_mulai, j.jam_selesai
+    FROM dokter d
+    JOIN jadwal_dokter j ON j.id_dokter = d.id_dokter
+    WHERE j.status = 'Praktek'
+    ORDER BY j.hari, d.nama_dokter");
 
 if (isset($_POST['simpan'])) {
-    $nama = htmlspecialchars($_POST['nama']);
-    $keluhan = htmlspecialchars($_POST['keluhan']);
+    $nama  = mysqli_real_escape_string($koneksi, trim($_POST['nama']));
+    $tgl_l = mysqli_real_escape_string($koneksi, $_POST['tanggal_lahir']);
+    $jenis = mysqli_real_escape_string($koneksi, $_POST['jenis_kelamin']);
+    $telp  = mysqli_real_escape_string($koneksi, $_POST['no_telepon']);
+    $keluhan  = mysqli_real_escape_string($koneksi, trim($_POST['keluhan']));
+    $id_jadwal = (int)$_POST['id_jadwal'];
 
-    $simpan = mysqli_query($koneksi, "INSERT INTO antrian (no_antrian, nama_pendaftar, keluhan, status) VALUES ('$nomor_antrian', '$nama', '$keluhan', 'Menunggu')");
-
-    if ($simpan) {
-        // AMBIL ID YANG BARUSAN DIBUAT
-        $id_terbaru = mysqli_insert_id($koneksi);
-
-        $notif_sukses = true; // Trigger SweetAlert Sukses
+    if (empty($nama) || empty($tgl_l) || empty($jenis) || empty($keluhan) || empty($id_jadwal)) {
+        $notif_gagal = true;
     } else {
-        $notif_gagal = true; // Trigger SweetAlert Gagal
+        // Ambil id_dokter dari jadwal yang dipilih
+        $q_jdwl = mysqli_query($koneksi, "SELECT j.id_dokter FROM jadwal_dokter j WHERE j.id = $id_jadwal");
+        $row_jdwl = mysqli_fetch_assoc($q_jdwl);
+        $id_dokter = $row_jdwl ? (int)$row_jdwl['id_dokter'] : 'NULL';
+
+        // Cek / insert data pasien (berdasarkan nama + tgl lahir)
+        $cek = mysqli_query($koneksi, "SELECT id FROM pasien WHERE nama='$nama' AND tanggal_lahir='$tgl_l' LIMIT 1");
+        if (mysqli_num_rows($cek) > 0) {
+            $pasien = mysqli_fetch_assoc($cek);
+            $id_pasien = $pasien['id'];
+        } else {
+            $total_pasien = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM pasien")) + 1;
+            $kode_rm = 'RM' . str_pad($total_pasien, 4, '0', STR_PAD_LEFT);
+            mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, no_telepon, nik, alamat) 
+                VALUES ('$kode_rm', '$nama', '$tgl_l', '$jenis', '$telp', '', '')");
+            $id_pasien = mysqli_insert_id($koneksi);
+        }
+
+        $simpan = mysqli_query($koneksi, "INSERT INTO antrian (id_pasien, id_jadwal, id_dokter, no_antrian, nama_pendaftar, keluhan, status, waktu_daftar) 
+            VALUES ($id_pasien, $id_jadwal, $id_dokter, '$nomor_antrian', '$nama', '$keluhan', 'Menunggu', NOW())");
+
+        if ($simpan) {
+            $id_terbaru = mysqli_insert_id($koneksi);
+            $notif_sukses = true;
+        } else {
+            $notif_gagal = true;
+        }
     }
 }
 ?>
@@ -114,7 +147,8 @@ if (isset($_POST['simpan'])) {
         }
 
         input,
-        textarea {
+        textarea,
+        select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
@@ -123,10 +157,13 @@ if (isset($_POST['simpan'])) {
             box-sizing: border-box;
             /* Biar padding gak ngerusak lebar */
             transition: 0.3s;
+            font-family: 'Segoe UI', sans-serif;
+            background: white;
         }
 
         input:focus,
-        textarea:focus {
+        textarea:focus,
+        select:focus {
             border-color: var(--hijau-tua);
             outline: none;
             background: #f0fdf4;
@@ -179,12 +216,46 @@ if (isset($_POST['simpan'])) {
 
         <form method="POST">
             <div class="form-group">
-                <label>Nama Lengkap Pasien</label>
+                <label>Nama Lengkap Pasien <span style="color:red;">*</span></label>
                 <input type="text" name="nama" placeholder="Contoh: Budi Santoso" required autocomplete="off">
             </div>
 
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Tanggal Lahir <span style="color:red;">*</span></label>
+                    <input type="date" name="tanggal_lahir" required>
+                </div>
+                <div style="flex: 1;">
+                    <label>Jenis Kelamin <span style="color:red;">*</span></label>
+                    <select name="jenis_kelamin" required>
+                        <option value="">-- Pilih --</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label>Keluhan / Sakit Apa?</label>
+                <label>No. Telepon / WhatsApp</label>
+                <input type="text" name="no_telepon" placeholder="08xxxxxxxxxx" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>Pilih Dokter & Jadwal <span style="color:red;">*</span></label>
+                <select name="id_jadwal" required>
+                    <option value="">-- Pilih Jadwal Dokter --</option>
+                    <?php while ($jdwl = mysqli_fetch_assoc($query_dokter)): ?>
+                        <option value="<?php echo $jdwl['id_jadwal']; ?>">
+                            dr. <?php echo htmlspecialchars($jdwl['nama_dokter']); ?> —
+                            <?php echo $jdwl['hari']; ?>
+                            (<?php echo substr($jdwl['jam_mulai'], 0, 5); ?>–<?php echo substr($jdwl['jam_selesai'], 0, 5); ?>)
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Keluhan / Sakit Apa? <span style="color:red;">*</span></label>
                 <textarea name="keluhan" rows="3" placeholder="Contoh: Demam tinggi sejak semalam, pusing..." required></textarea>
             </div>
 
