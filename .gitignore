@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# WhatsApp Web Session
+.wwebjs_auth/
+*/.wwebjs_auth/
+
+# Compressed archives & large dumps
+*.rar
+*.zip
+*.tar.gz
+
+# Logs
+*.log

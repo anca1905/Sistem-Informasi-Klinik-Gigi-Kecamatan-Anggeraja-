@@ -70,6 +70,17 @@ CREATE TABLE IF NOT EXISTS `transaksi` (
   FOREIGN KEY (`id_antrian`) REFERENCES `antrian`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ------------------------------------------------------------
+-- 7. Buat tabel SETTINGS (baru) - Fonnte WhatsApp API Gateway
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id`           INT AUTO_INCREMENT PRIMARY KEY,
+  `fonnte_token` VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `settings` (`id`, `fonnte_token`) VALUES (1, '')
+ON DUPLICATE KEY UPDATE `id` = `id`;
+
 -- ============================================================
 -- SELESAI
 -- ============================================================

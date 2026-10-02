@@ -62,6 +62,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($insert) {
             $pesan = "Pendaftaran berhasil! No. Antrian: <strong>#$no_antrian</strong>";
             $pesan_type = 'success';
+
+            // Kirim notifikasi WhatsApp via Fonnte jika nomor terisi
+            if (!empty($telp)) {
+                $q_dok = mysqli_query($koneksi, "SELECT nama_dokter FROM dokter WHERE id_dokter='$id_dokter' LIMIT 1");
+                $d_dok = mysqli_fetch_assoc($q_dok);
+                $nama_dokter = $d_dok ? $d_dok['nama_dokter'] : 'Dokter';
+
+                $msg_antrian = "Halo *$nama*,\n\nPendaftaran antrian Anda di *Klinik Gigi Anggeraja* berhasil!\n\n" .
+                               "📌 *Nomor Antrian:* #$no_antrian\n" .
+                               "📅 *Tanggal:* " . date('d-m-Y') . "\n" .
+                               "👨‍⚕️ *Dokter:* $nama_dokter\n\n" .
+                               "Silakan menunggu di ruang tunggu klinik hingga nomor Anda dipanggil. Terima kasih! 🙏";
+                @sendWA($telp, $msg_antrian);
+            }
         } else {
             $pesan = 'Terjadi kesalahan, coba lagi.';
             $pesan_type = 'error';

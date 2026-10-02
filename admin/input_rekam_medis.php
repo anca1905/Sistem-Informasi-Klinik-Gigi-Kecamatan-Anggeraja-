@@ -86,23 +86,9 @@ if (isset($_POST['simpan_rm'])) {
             $pdf_path = __DIR__ . "/../assets/surat_kontrol/" . $pdf_filename;
             $pdf->Output('F', $pdf_path);
 
-            // Kirim ke WhatsApp API
-            $message = "Halo *$nama_pasien*, berikut adalah Surat Kontrol Anda dari Klinik Gigi Anggeraja. Jangan lupa untuk kontrol pada tanggal *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.";
-            $url = "http://127.0.0.1:3001/send-message";
-            $data_api = array(
-                "number" => $no_wa,
-                "message" => $message,
-                "pdf_path" => $pdf_path
-            );
-            $options = array(
-                'http' => array(
-                    'header'  => "Content-type: application/json\r\n",
-                    'method'  => 'POST',
-                    'content' => json_encode($data_api)
-                )
-            );
-            $context  = stream_context_create($options);
-            @file_get_contents($url, false, $context);
+            // Kirim ke WhatsApp via Fonnte API
+            $message = "Halo *$nama_pasien*,\n\nBerikut adalah Surat Kontrol Anda dari *Klinik Gigi Anggeraja*.\nJadwal kontrol berikutnya: *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.\n\nHarap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami! 🙏";
+            sendWA($no_wa, $message, $pdf_path, $pdf_filename);
         }
     }
 

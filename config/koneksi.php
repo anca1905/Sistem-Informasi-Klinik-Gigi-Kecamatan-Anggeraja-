@@ -15,3 +15,11 @@ if (!$koneksi) {
 
 // Set timezone ke WIB (Waktu Indonesia Barat) biar jam antrian pas
 date_default_timezone_set('Asia/Jakarta');
+
+// Load WhatsApp Gateway Helper (Fonnte API)
+require_once __DIR__ . '/wa_helper.php';
+
+// Fonnte WhatsApp API Token (Opsional jika diisi via Menu Admin -> WhatsApp Gateway)
+if (!defined('FONNTE_TOKEN')) {
+    define('FONNTE_TOKEN', '');
+}

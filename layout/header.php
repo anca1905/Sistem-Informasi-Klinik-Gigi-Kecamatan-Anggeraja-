@@ -58,8 +58,8 @@
                 <a href="transaksi.php" class="menu-link <?php echo (in_array($current_page, ['transaksi.php', 'tambah_transaksi.php', 'konfirmasi_bayar.php', 'cetak_struk_bayar.php'])) ? 'active' : ''; ?>">
                     <i class="fas fa-cash-register"></i> Transaksi
                 </a>
-                <a href="wa_bot.php" class="menu-link <?php echo ($current_page == 'wa_bot.php') ? 'active' : ''; ?>">
-                    <i class="fab fa-whatsapp"></i> WhatsApp Bot
+                <a href="whatsapp.php" class="menu-link <?php echo (in_array($current_page, ['whatsapp.php', 'wa_bot.php'])) ? 'active' : ''; ?>">
+                    <i class="fab fa-whatsapp"></i> WhatsApp Gateway
                 </a>
             <?php endif; ?>
 
