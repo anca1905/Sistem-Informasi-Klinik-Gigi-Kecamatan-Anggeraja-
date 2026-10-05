@@ -7,6 +7,11 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
     exit();
 }
 
+if ($_SESSION['role'] != 'Admin') {
+    header("location:dashboard.php");
+    exit();
+}
+
 $nama_petugas = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : $_SESSION['login_user'];
 $pesan = '';
 $pesan_type = '';

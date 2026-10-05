@@ -167,12 +167,12 @@ if (isset($_POST['login'])) {
         <script>
             Swal.fire({
                 title: 'Login Berhasil!',
-                text: 'Selamat datang kembali, Petugas.',
+                text: 'Selamat datang kembali, <?php echo isset($_SESSION["nama_lengkap"]) ? addslashes($_SESSION["nama_lengkap"]) : "Pengguna"; ?>.',
                 icon: 'success',
-                timer: 2000, // Otomatis pindah dalam 2 detik
+                timer: 1500, // Otomatis pindah dalam 1.5 detik
                 showConfirmButton: false
             }).then(() => {
-                window.location = '../admin/dashboard.php'; // Kita akan buat ini nanti
+                window.location = '../admin/dashboard.php';
             });
         </script>
     <?php } ?>

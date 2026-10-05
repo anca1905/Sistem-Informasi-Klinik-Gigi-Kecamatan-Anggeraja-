@@ -32,20 +32,39 @@ $nama_lengkap_dokter = $_SESSION['nama_lengkap'];
             <thead>
                 <tr>
                     <th>Hari</th>
+                    <th>Nama Dokter</th>
                     <th>Jam Praktek</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                // Cari jadwal hanya untuk dokter yang sedang login
-                $query = mysqli_query($koneksi, "SELECT * FROM jadwal_dokter WHERE nama_dokter='$nama_lengkap_dokter' ORDER BY FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu')");
+                // Cari jadwal dengan JOIN dokter
+                $nama_safe = mysqli_real_escape_string($koneksi, $nama_lengkap_dokter);
+                $query = mysqli_query($koneksi, "
+                    SELECT j.*, d.nama_dokter 
+                    FROM jadwal_dokter j 
+                    LEFT JOIN dokter d ON j.id_dokter = d.id_dokter 
+                    WHERE d.nama_dokter LIKE '%$nama_safe%'
+                    ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'), j.jam_mulai
+                ");
 
-                if (mysqli_num_rows($query) > 0) {
+                // Jika nama dokter generik atau tidak spesifik, tampilkan seluruh jadwal
+                if (!$query || mysqli_num_rows($query) == 0) {
+                    $query = mysqli_query($koneksi, "
+                        SELECT j.*, d.nama_dokter 
+                        FROM jadwal_dokter j 
+                        LEFT JOIN dokter d ON j.id_dokter = d.id_dokter 
+                        ORDER BY FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'), j.jam_mulai
+                    ");
+                }
+
+                if ($query && mysqli_num_rows($query) > 0) {
                     while ($row = mysqli_fetch_array($query)) {
                 ?>
                         <tr>
                             <td style="font-weight: bold;"><?php echo $row['hari']; ?></td>
+                            <td>dr. <?php echo htmlspecialchars($row['nama_dokter'] ?? '-'); ?></td>
                             <td>
                                 <i class="far fa-clock" style="color: #6b7280; margin-right: 5px;"></i>
                                 <?php echo date('H:i', strtotime($row['jam_mulai'])) . ' - ' . date('H:i', strtotime($row['jam_selesai'])); ?>
@@ -63,8 +82,8 @@ $nama_lengkap_dokter = $_SESSION['nama_lengkap'];
                 } else {
                     ?>
                     <tr>
-                        <td colspan="3" style="text-align: center; padding: 20px; color: #6b7280;">
-                            Belum ada jadwal praktek yang ditentukan untuk Anda.
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #6b7280;">
+                            Belum ada jadwal praktek yang ditentukan.
                         </td>
                     </tr>
                 <?php } ?>

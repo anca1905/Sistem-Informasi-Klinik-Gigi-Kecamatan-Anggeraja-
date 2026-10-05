@@ -7,6 +7,11 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
     exit();
 }
 
+if ($_SESSION['role'] != 'Admin') {
+    header("location:dashboard.php");
+    exit();
+}
+
 // Ambil daftar antrian yang sudah selesai pemeriksaan (status='Selesai')
 // dan belum punya transaksi
 $q_antrian = mysqli_query($koneksi, "

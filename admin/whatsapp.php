@@ -7,7 +7,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
     exit();
 }
 if ($_SESSION['role'] != 'Admin') {
-    echo "Akses Ditolak";
+    header("location:dashboard.php");
     exit();
 }
 

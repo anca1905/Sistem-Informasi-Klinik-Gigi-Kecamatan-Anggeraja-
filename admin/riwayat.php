@@ -4,7 +4,12 @@ session_start();
 include '../config/koneksi.php';
 
 if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
-    header("location:../login.php"); // Sesuaikan path login
+    header("location:../auth/login.php");
+    exit();
+}
+
+if ($_SESSION['role'] != 'Admin' && $_SESSION['role'] != 'Dokter') {
+    header("location:dashboard.php");
     exit();
 }
 

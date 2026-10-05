@@ -34,21 +34,19 @@
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
 
-            <?php if ($role_active == 'Admin' || $role_active == 'Dokter'): ?>
-            <a href="pendaftaran.php" class="menu-link <?php echo ($current_page == 'pendaftaran.php') ? 'active' : ''; ?>">
-                <i class="fas fa-clipboard-list"></i> Pendaftaran
-            </a>
-
-            <a href="antrian.php" class="menu-link <?php echo ($current_page == 'antrian.php') ? 'active' : ''; ?>">
-                <i class="fas fa-list-ol"></i> Antrian
-            </a>
-
-            <a href="data_pasien.php" class="menu-link <?php echo (in_array($current_page, ['data_pasien.php', 'tambah_pasien.php', 'edit_pasien.php'])) ? 'active' : ''; ?>">
-                <i class="fas fa-user-injured"></i> Pasien
-            </a>
-            <?php endif; ?>
-
             <?php if ($role_active == 'Admin'): ?>
+                <a href="pendaftaran.php" class="menu-link <?php echo ($current_page == 'pendaftaran.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-clipboard-list"></i> Pendaftaran
+                </a>
+
+                <a href="antrian.php" class="menu-link <?php echo ($current_page == 'antrian.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-list-ol"></i> Antrian
+                </a>
+
+                <a href="data_pasien.php" class="menu-link <?php echo (in_array($current_page, ['data_pasien.php', 'tambah_pasien.php', 'edit_pasien.php'])) ? 'active' : ''; ?>">
+                    <i class="fas fa-user-injured"></i> Pasien
+                </a>
+
                 <a href="data_dokter.php" class="menu-link <?php echo (in_array($current_page, ['data_dokter.php', 'tambah_dokter.php', 'edit_dokter.php'])) ? 'active' : ''; ?>">
                     <i class="fas fa-user-md"></i> Dokter
                 </a>
@@ -61,12 +59,27 @@
                 <a href="whatsapp.php" class="menu-link <?php echo (in_array($current_page, ['whatsapp.php', 'wa_bot.php'])) ? 'active' : ''; ?>">
                     <i class="fab fa-whatsapp"></i> WhatsApp Gateway
                 </a>
+                <a href="riwayat.php" class="menu-link <?php echo ($current_page == 'riwayat.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-history"></i> Riwayat Rekam Medis
+                </a>
+            <?php endif; ?>
+
+            <?php if ($role_active == 'Dokter'): ?>
+                <a href="antrian.php" class="menu-link <?php echo ($current_page == 'antrian.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-list-ol"></i> Antrian Pasien
+                </a>
+                <a href="riwayat.php" class="menu-link <?php echo ($current_page == 'riwayat.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-notes-medical"></i> Riwayat Rekam Medis
+                </a>
+                <a href="jadwal_saya.php" class="menu-link <?php echo ($current_page == 'jadwal_saya.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar-check"></i> Jadwal Praktek
+                </a>
             <?php endif; ?>
 
             <?php if ($role_active == 'Admin' || $role_active == 'Manajer Klinik'): ?>
-            <a href="laporan.php" class="menu-link <?php echo ($current_page == 'laporan.php') ? 'active' : ''; ?>">
-                <i class="fas fa-file-alt"></i> Laporan
-            </a>
+                <a href="laporan.php" class="menu-link <?php echo ($current_page == 'laporan.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-file-alt"></i> Laporan
+                </a>
             <?php endif; ?>
         </div>
 

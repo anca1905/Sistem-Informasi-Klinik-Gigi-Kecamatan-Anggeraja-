@@ -1,5 +1,11 @@
 <?php
+session_start();
 include '../config/koneksi.php';
+
+if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
+    header("location:../auth/login.php");
+    exit();
+}
 
 // Ambil data dari Form Filter
 $jenis = isset($_GET['jenis']) ? $_GET['jenis'] : '';
@@ -13,9 +19,17 @@ $tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : '';
 if ($jenis == 'antrian') {
     $judul = "LAPORAN KUNJUNGAN PASIEN";
     $query = mysqli_query($koneksi, "SELECT * FROM antrian WHERE DATE(waktu_daftar) BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY waktu_daftar ASC");
-} elseif ($jenis == 'kunjungan_berikutnya') {
-    $judul = "LAPORAN JADWAL KUNJUNGAN BERIKUTNYA";
-    $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis WHERE kunjungan_berikutnya BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY kunjungan_berikutnya ASC");
+} elseif ($jenis == 'kunjungan_berikutnya' || $tab == 'kontrol') {
+    $judul = "LAPORAN JADWAL KUNJUNGAN BERIKUTNYA (KONTROL)" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
+    $where = $tanggal ? "WHERE DATE(rm.kunjungan_berikutnya) = '$tanggal'" : "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya != ''";
+    $query = mysqli_query($koneksi, "
+        SELECT rm.*, p.kode_pasien, p.nama AS nama_pasien, p.no_telepon, d.nama_dokter
+        FROM rekam_medis rm 
+        LEFT JOIN pasien p ON rm.id_pasien = p.id 
+        LEFT JOIN dokter d ON rm.id_dokter = d.id_dokter 
+        $where 
+        ORDER BY rm.kunjungan_berikutnya ASC
+    ");
 } elseif ($tab == 'pemeriksaan') {
     $judul = "LAPORAN PEMERIKSAAN" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
     $where = $tanggal ? "WHERE DATE(rm.tanggal_periksa) = '$tanggal'" : "";
@@ -151,13 +165,15 @@ if ($tgl_awal && $tgl_akhir) {
                     <th>Keluhan</th>
                     <th>Status Akhir</th>
                 </tr>
-            <?php } elseif ($jenis == 'kunjungan_berikutnya') { ?>
+            <?php } elseif ($jenis == 'kunjungan_berikutnya' || $tab == 'kontrol') { ?>
                 <tr>
                     <th width="5%">No</th>
-                    <th>Tanggal Kunjungan Awal</th>
+                    <th>Jadwal Kontrol</th>
+                    <th>No. RM</th>
                     <th>Nama Pasien</th>
-                    <th>Jadwal Kunjungan Berikutnya</th>
-                    <th>Keluhan / Diagnosa</th>
+                    <th>No. Telepon</th>
+                    <th>Dokter</th>
+                    <th>Diagnosa</th>
                 </tr>
             <?php } elseif ($tab == 'pemeriksaan' || $jenis == '') { ?>
                 <tr>
@@ -206,11 +222,13 @@ if ($tgl_awal && $tgl_akhir) {
                             <td><?php echo $row['keluhan']; ?></td>
                             <td><?php echo $row['status']; ?></td>
 
-                        <?php } elseif ($jenis == 'kunjungan_berikutnya') { ?>
-                            <td style="text-align: center;"><?php echo date('d-m-Y', strtotime($row['tanggal_periksa'])); ?></td>
-                            <td><?php echo htmlspecialchars($row['nama_pasien'] ?? '-'); ?></td>
+                        <?php } elseif ($jenis == 'kunjungan_berikutnya' || $tab == 'kontrol') { ?>
                             <td style="text-align: center; font-weight: bold;"><?php echo date('d-m-Y', strtotime($row['kunjungan_berikutnya'])); ?></td>
-                            <td><?php echo "<b>Keluhan:</b> " . $row['keluhan'] . "<br><b>Diagnosa:</b> " . $row['diagnosa']; ?></td>
+                            <td style="text-align: center;"><?php echo htmlspecialchars($row['kode_pasien'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($row['nama_pasien'] ?? '-'); ?></td>
+                            <td style="text-align: center;"><?php echo htmlspecialchars($row['no_telepon'] ?? '-'); ?></td>
+                            <td><?php echo $row['nama_dokter'] ? 'dr. ' . htmlspecialchars($row['nama_dokter']) : '-'; ?></td>
+                            <td><?php echo htmlspecialchars($row['diagnosa'] ?? '-'); ?></td>
 
                         <?php } elseif ($tab == 'pemeriksaan' || $jenis == '') { ?>
                             <td style="text-align: center;"><?php echo date('d-m-Y', strtotime($row['tanggal_periksa'])); ?></td>
@@ -249,16 +267,15 @@ if ($tgl_awal && $tgl_akhir) {
     <div class="ttd-area">
         <p>Anggeraja, <?php echo date('d-m-Y'); ?><br>
             <?php
-            // In a real application, we might want to change this dynamically based on login.
-            // For now, let's keep it generic or based on a quick check.
-            session_start();
-            $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'Kepala Klinik';
-            $nama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'drg. Budi Santoso';
+            $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'Manajer Klinik';
+            $nama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Manajer Klinik';
 
-            if ($role == 'Dokter') {
+            if ($role == 'Manajer Klinik') {
+                echo "Manajer Klinik,</p>";
+            } elseif ($role == 'Dokter') {
                 echo "Dokter Pemeriksa,</p>";
             } else {
-                echo "Kepala Klinik,</p>";
+                echo "Petugas / Admin Klinik,</p>";
             }
             ?>
             <br><br><br>

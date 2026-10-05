@@ -4,24 +4,36 @@ include '../config/koneksi.php';
 
 // Cek Login
 if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
-    header("location:login.php");
+    header("location:../auth/login.php");
+    exit();
+}
+
+if ($_SESSION['role'] != 'Dokter' && $_SESSION['role'] != 'Admin') {
+    header("location:dashboard.php");
     exit();
 }
 
 // Ambil ID Antrian dari URL
-$id_antrian = $_GET['id'];
+$id_antrian = (int)$_GET['id'];
 
 // Ambil Data Pasien berdasarkan ID Antrian
 $query = mysqli_query($koneksi, "SELECT * FROM antrian WHERE id = '$id_antrian'");
 $data = mysqli_fetch_array($query);
+
+if (!$data) {
+    header("location:antrian.php");
+    exit();
+}
 
 // Jika tombol Simpan ditekan
 if (isset($_POST['simpan_rm'])) {
     $nama_pasien = mysqli_real_escape_string($koneksi, $data['nama_pendaftar']);
     $keluhan     = mysqli_real_escape_string($koneksi, $data['keluhan']);
     $diagnosa    = mysqli_real_escape_string($koneksi, $_POST['diagnosa']);
+    $tindakan    = !empty($_POST['tindakan']) ? mysqli_real_escape_string($koneksi, $_POST['tindakan']) : $diagnosa;
     $resep       = mysqli_real_escape_string($koneksi, $_POST['resep']);
     $tgl         = date('Y-m-d');
+    $id_dokter   = !empty($data['id_dokter']) ? (int)$data['id_dokter'] : 'NULL';
 
     $tgl_kunjungan_kembali = !empty($_POST['tgl_kunjungan_kembali']) ? $_POST['tgl_kunjungan_kembali'] : NULL;
 
@@ -41,9 +53,9 @@ if (isset($_POST['simpan_rm'])) {
 
     // 2. Simpan ke tabel rekam_medis
     if ($tgl_kunjungan_kembali) {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep', '$tgl_kunjungan_kembali')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$tgl_kunjungan_kembali')");
     } else {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, nama_pasien, tanggal_periksa, keluhan, diagnosa, resep_obat) VALUES ('$id_pasien', '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$resep')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep')");
     }
     $id_rm_baru = mysqli_insert_id($koneksi);
 
@@ -92,14 +104,19 @@ if (isset($_POST['simpan_rm'])) {
         }
     }
 
-    // 4. Buat transaksi otomatis (status Belum Bayar) lalu arahkan ke form transaksi
+    // 4. Buat transaksi otomatis (status Belum Bayar) lalu arahkan sesuai role
     if ($insert && $update) {
         $cek_trx = mysqli_query($koneksi, "SELECT id_transaksi FROM transaksi WHERE id_antrian='$id_antrian' LIMIT 1");
         if (mysqli_num_rows($cek_trx) == 0) {
-            mysqli_query($koneksi, "INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, status_bayar) VALUES ('$id_antrian', '$id_rm_baru', '$nama_pasien', '$diagnosa', 0, 'Belum Bayar')");
+            mysqli_query($koneksi, "INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, status_bayar) VALUES ('$id_antrian', '$id_rm_baru', '$nama_pasien', '$tindakan', 0, 'Belum Bayar')");
         }
-        header("location:tambah_transaksi.php?id_antrian=$id_antrian");
-        exit();
+        if (isset($_SESSION['role']) && $_SESSION['role'] == 'Dokter') {
+            header("location:antrian.php?status=selesai_periksa");
+            exit();
+        } else {
+            header("location:tambah_transaksi.php?id_antrian=$id_antrian");
+            exit();
+        }
     } else {
         echo "<script>alert('Gagal menyimpan data');</script>";
     }
@@ -239,8 +256,13 @@ if (isset($_POST['simpan_rm'])) {
             </div>
 
             <div class="form-group">
-                <label>Diagnosa & Tindakan</label>
-                <textarea name="diagnosa" rows="4" placeholder="Contoh: - Gigi 46: Karies Profunda (Lubang Dalam)- Tindakan: Tambal Sinar (Composite)" required></textarea>
+                <label>Diagnosa Medis</label>
+                <textarea name="diagnosa" rows="3" placeholder="Contoh: Gigi 46: Karies Profunda (Lubang Gigi Dalam)" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Tindakan Medis</label>
+                <textarea name="tindakan" rows="3" placeholder="Contoh: Penambalan Komposit Sinar / Pembersihan Karang Gigi" required></textarea>
             </div>
 
             <div class="form-group">
@@ -249,13 +271,16 @@ if (isset($_POST['simpan_rm'])) {
             </div>
 
             <div class="form-group">
-                <label>Tanggal Kunjungan Kembali (Opsional)</label>
+                <label>Tanggal Kunjungan Kembali / Jadwal Kontrol (Opsional)</label>
                 <input type="date" name="tgl_kunjungan_kembali" title="Jika pasien harus kembali, tentukan tanggalnya di sini.">
             </div>
 
             <div style="margin-top: 30px;">
-                <a href="dashboard.php" class="btn-back">Batal</a>
+                <a href="antrian.php" class="btn-back">Batal</a>
                 <button type="submit" name="simpan_rm" class="btn-submit">
+                    <i class="fas fa-tooth"></i> Simpan Perawatan
+                </button>
+            </div>
                     <i class="fas fa-tooth"></i> Simpan Perawatan
                 </button>
             </div>

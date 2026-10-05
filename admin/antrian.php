@@ -100,10 +100,18 @@ $selesai  = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM antrian WHERE
                 </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tampilkan</button>
-            <a href="pendaftaran.php" class="btn btn-success"><i class="fas fa-plus"></i> Daftar Baru</a>
+            <?php if ($role_active == 'Admin'): ?>
+                <a href="pendaftaran.php" class="btn btn-success"><i class="fas fa-plus"></i> Daftar Baru</a>
+            <?php endif; ?>
         </form>
     </div>
 </div>
+
+<?php if (isset($_GET['status']) && $_GET['status'] == 'selesai_periksa'): ?>
+    <div style="background:#d1fae5; border-left:4px solid #10b981; padding:12px 18px; margin-bottom:20px; border-radius:6px; color:#065f46; font-weight:500;">
+        <i class="fas fa-check-circle" style="margin-right:8px;"></i> Pemeriksaan berhasil disimpan & jadwal kontrol telah dicatat! Data tagihan diteruskan ke Kasir/Admin.
+    </div>
+<?php endif; ?>
 
 <!-- Tabel -->
 <div class="table-container">
@@ -154,6 +162,18 @@ $selesai  = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM antrian WHERE
                                     <?php else: ?>
                                         <span style="color:#059669;font-weight:600;font-size:.85rem;"><i class="fas fa-check"></i> Tuntas</span>
                                     <?php endif; ?>
+                                <?php elseif ($role_active == 'Dokter'): ?>
+                                    <?php if ($row['status'] == 'Menunggu'): ?>
+                                        <span style="color:#d97706;font-weight:600;font-size:.85rem;"><i class="fas fa-clock"></i> Belum Dipanggil</span>
+                                    <?php elseif ($row['status'] == 'Dilayani'): ?>
+                                        <a href="input_rekam_medis.php?id=<?php echo $row['id']; ?>" class="btn btn-success" style="font-size:.8rem;padding:6px 12px;">
+                                            <i class="fas fa-stethoscope"></i> Periksa Pasien
+                                        </a>
+                                    <?php else: ?>
+                                        <span style="color:#059669;font-weight:600;font-size:.85rem;"><i class="fas fa-check"></i> Selesai Diperiksa</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span style="color:#6b7280;font-size:.85rem;">-</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
