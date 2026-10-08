@@ -13,7 +13,11 @@ if (!isset($_GET['id'])) {
 
 $id_rm = mysqli_real_escape_string($koneksi, $_GET['id']);
 
-$query = mysqli_query($koneksi, "SELECT * FROM rekam_medis WHERE id = '$id_rm'");
+$query = mysqli_query($koneksi, "SELECT rm.*, p.nama AS nama_pasien_db, p.no_telepon, p.kode_pasien, d.nama_dokter 
+                                 FROM rekam_medis rm 
+                                 LEFT JOIN pasien p ON rm.id_pasien = p.id 
+                                 LEFT JOIN dokter d ON rm.id_dokter = d.id_dokter 
+                                 WHERE rm.id = '$id_rm'");
 if (mysqli_num_rows($query) == 0) {
     die("Rekam medis tidak ditemukan.");
 }
@@ -25,11 +29,40 @@ if (empty($data['kunjungan_berikutnya'])) {
     die("Tidak ada jadwal kunjungan kembali untuk rekam medis ini.");
 }
 
+// Nama Pasien prioritas
+$nama_pasien = !empty($data['nama_pasien']) ? $data['nama_pasien'] : (!empty($data['nama_pasien_db']) ? $data['nama_pasien_db'] : '-');
+
 // Format Tanggal Indonesia
 $bulanIndo = array("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember");
 $tgl_kembali = date('d', strtotime($data['kunjungan_berikutnya'])) . ' ' . $bulanIndo[(int)date('m', strtotime($data['kunjungan_berikutnya'])) - 1] . ' ' . date('Y', strtotime($data['kunjungan_berikutnya']));
 $tgl_periksa = date('d', strtotime($data['tanggal_periksa'])) . ' ' . $bulanIndo[(int)date('m', strtotime($data['tanggal_periksa'])) - 1] . ' ' . date('Y', strtotime($data['tanggal_periksa']));
 $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
+
+// Format Nomor Telepon Pasien untuk WhatsApp
+$no_telepon = trim($data['no_telepon'] ?? '');
+$wa_number = preg_replace('/[^0-9]/', '', $no_telepon);
+if (!empty($wa_number)) {
+    if (substr($wa_number, 0, 1) === '0') {
+        $wa_number = '62' . substr($wa_number, 1);
+    } elseif (substr($wa_number, 0, 2) !== '62') {
+        $wa_number = '62' . $wa_number;
+    }
+}
+
+// Format Pesan WhatsApp
+$diagnosa_text = trim(preg_replace('/\s+/', ' ', strip_tags($data['diagnosa'] ?? '-')));
+$pesan_wa = "*SURAT JADWAL KUNJUNGAN KEMBALI*\n"
+    . "*KLINIK GIGI KECAMATAN ANGGERAJA*\n"
+    . "Jl. Atlanta No.6, Kecamatan Anggeraja\n"
+    . "-------------------------------------------\n\n"
+    . "Halo Bapak/Ibu *" . $nama_pasien . "*,\n\n"
+    . "Berdasarkan hasil pemeriksaan pada tanggal " . $tgl_periksa . ", diberitahukan agar datang kembali untuk kontrol/perawatan lanjutan pada:\n\n"
+    . "🗓️ *Tanggal Kontrol:* *" . $tgl_kembali . "*\n"
+    . "📋 *Keluhan / Diagnosa:* " . $diagnosa_text . "\n\n"
+    . "Dokter Pemeriksa:\n"
+    . "*drg. Syamsuriah*\n\n"
+    . "Mohon hadir tepat waktu sesuai jadwal yang telah ditentukan.\n"
+    . "Terima kasih, semoga sehat selalu! 🙏";
 ?>
 
 <!DOCTYPE html>
@@ -37,7 +70,7 @@ $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
 
 <head>
     <meta charset="UTF-8">
-    <title>Surat Kunjungan - <?php echo htmlspecialchars($data['nama_pasien'] ?? '-'); ?></title>
+    <title>Surat Kunjungan - <?php echo htmlspecialchars($nama_pasien); ?></title>
     <style>
         body {
             font-family: 'Times New Roman', serif;
@@ -97,10 +130,59 @@ $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
             margin-top: 50px;
         }
 
-        /* Hilangkan tombol print saat dicetak */
+        /* Tombol Aksi */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn-print {
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background: #111827;
+        }
+
+        .btn-wa {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-wa:hover {
+            background: #1eb857;
+        }
+
+        /* Hilangkan tombol aksi saat dicetak */
         @media print {
-            .btn-print {
-                display: none;
+            .action-buttons,
+            .btn-print,
+            .btn-wa {
+                display: none !important;
             }
 
             body {
@@ -108,26 +190,18 @@ $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
                 margin: 0;
             }
         }
-
-        .btn-print {
-            background: #333;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            display: block;
-        }
     </style>
 </head>
 
 <body>
 
-    <button onclick="window.print()" class="btn-print">🖨️ Cetak Surat</button>
+    <div class="action-buttons">
+        <button onclick="window.print()" class="btn-print">🖨️ Cetak Surat</button>
+        <button onclick="bagikanWhatsApp()" class="btn-wa">📱 Bagikan ke WhatsApp</button>
+    </div>
 
     <div class="kop-surat">
-        <h2>KLINIK GIGI DESA SEHAT</h2>
+        <h2>KLINIK GIGI KECAMATAN ANGGERAJA</h2>
         <p>Jl. Atlanta No.6, Kecamatan Anggeraja</p>
         <p>Telp: (021) 555-8888 | Email: admin@klinikdesa.com</p>
     </div>
@@ -143,7 +217,7 @@ $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
             <tr>
                 <td width="200"><strong>Nama Pasien</strong></td>
                 <td width="10">:</td>
-                <td><strong><?php echo htmlspecialchars($data['nama_pasien'] ?? '-'); ?></strong></td>
+                <td><strong><?php echo htmlspecialchars($nama_pasien); ?></strong></td>
             </tr>
             <tr>
                 <td>Keluhan / Diagnosa</td>
@@ -164,13 +238,29 @@ $hari_ini = date('d') . ' ' . $bulanIndo[(int)date('m') - 1] . ' ' . date('Y');
     <div class="ttd-area">
         <p>Anggeraja, <?php echo $hari_ini; ?><br>Dokter Pemeriksa,</p>
         <br><br><br>
-        <p><b><?php echo htmlspecialchars($_SESSION['login_user']); ?></b><br>(..........................................................)</p>
+        <p><b>drg. Syamsuriah</b></p>
     </div>
 
     <script>
-        // Otomatis print saat halaman dibuka
-        window.onload = function() {
-            window.print();
+        function bagikanWhatsApp() {
+            var phone = '<?php echo $wa_number; ?>';
+            var text = <?php echo json_encode($pesan_wa); ?>;
+
+            if (!phone) {
+                var inputPhone = prompt("Nomor telepon pasien belum tercatat di data sistem.\nSilakan masukkan nomor WhatsApp pasien (contoh: 08123456789):");
+                if (!inputPhone) {
+                    return;
+                }
+                phone = inputPhone.replace(/[^0-9]/g, '');
+                if (phone.charAt(0) === '0') {
+                    phone = '62' + phone.substring(1);
+                } else if (!phone.startsWith('62')) {
+                    phone = '62' + phone;
+                }
+            }
+
+            var waUrl = "https://api.whatsapp.com/send?phone=" + encodeURIComponent(phone) + "&text=" + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
         }
     </script>
 </body>

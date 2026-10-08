@@ -18,12 +18,13 @@ $tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : '';
 // Validasi Query berdasarkan jenis/tab laporan
 if ($jenis == 'antrian') {
     $judul = "LAPORAN KUNJUNGAN PASIEN";
-    $query = mysqli_query($koneksi, "SELECT * FROM antrian WHERE DATE(waktu_daftar) BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY waktu_daftar ASC");
+    $where = ($tgl_awal && $tgl_akhir) ? "WHERE DATE(waktu_daftar) BETWEEN '$tgl_awal' AND '$tgl_akhir'" : "";
+    $query = mysqli_query($koneksi, "SELECT * FROM antrian $where ORDER BY waktu_daftar ASC");
 } elseif ($jenis == 'kunjungan_berikutnya' || $tab == 'kontrol') {
     $judul = "LAPORAN JADWAL KUNJUNGAN BERIKUTNYA (KONTROL)" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
     $where = $tanggal ? "WHERE DATE(rm.kunjungan_berikutnya) = '$tanggal'" : "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya > '1970-01-01'";
     $query = mysqli_query($koneksi, "
-        SELECT rm.*, p.kode_pasien, p.nama AS nama_pasien, p.no_telepon, d.nama_dokter
+        SELECT rm.*, p.kode_pasien, p.nama AS nama_pasien, p.no_telepon, d.nama_dokter 
         FROM rekam_medis rm 
         LEFT JOIN pasien p ON rm.id_pasien = p.id 
         LEFT JOIN dokter d ON rm.id_dokter = d.id_dokter 
@@ -44,7 +45,8 @@ if ($jenis == 'antrian') {
 } else {
     $judul = "LAPORAN REKAM MEDIS";
     // Disini kita ambil data dari rekam medis (nanti bisa di JOIN dengan pasien kalo ada)
-    $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis WHERE tanggal_periksa BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY tanggal_periksa ASC");
+    $where = ($tgl_awal && $tgl_akhir) ? "WHERE tanggal_periksa BETWEEN '$tgl_awal' AND '$tgl_akhir'" : "";
+    $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis $where ORDER BY tanggal_periksa ASC");
 }
 
 $periode_text = "";
@@ -144,7 +146,7 @@ if ($tgl_awal && $tgl_akhir) {
     <button onclick="window.print()" class="btn-print">🖨️ Cetak Dokumen</button>
 
     <div class="kop-surat">
-        <h2>KLINIK GIGI DESA SEHAT</h2>
+        <h2>KLINIK GIGI KECAMATAN ANGGERAJA</h2>
         <p>Jl. Atlanta No.6, Kecamatan Anggeraja</p>
         <p>Telp: (021) 555-8888 | Email: admin@klinikdesa.com</p>
     </div>
@@ -265,21 +267,9 @@ if ($tgl_awal && $tgl_akhir) {
     </table>
 
     <div class="ttd-area">
-        <p>Anggeraja, <?php echo date('d-m-Y'); ?><br>
-            <?php
-            $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'Manajer Klinik';
-            $nama = isset($_SESSION['nama_lengkap']) ? $_SESSION['nama_lengkap'] : 'Manajer Klinik';
-
-            if ($role == 'Manajer Klinik') {
-                echo "Manajer Klinik,</p>";
-            } elseif ($role == 'Dokter') {
-                echo "Dokter Pemeriksa,</p>";
-            } else {
-                echo "Petugas / Admin Klinik,</p>";
-            }
-            ?>
-            <br><br><br>
-        <p><b><?php echo htmlspecialchars($nama); ?></b></p>
+        <p>Anggeraja, <?php echo date('d-m-Y'); ?><br>Dokter Pemeriksa,</p>
+        <br><br><br>
+        <p><b>drg. Syamsuriah</b></p>
     </div>
 
 </body>
