@@ -92,15 +92,20 @@ if (isset($_POST['simpan_rm'])) {
             
             // Buat folder jika belum ada
             if (!is_dir('../assets/surat_kontrol')) {
-                mkdir('../assets/surat_kontrol', 0777, true);
+                @mkdir('../assets/surat_kontrol', 0777, true);
             }
             $pdf_filename = "Surat_Kontrol_" . str_replace(" ", "_", $nama_pasien) . "_" . time() . ".pdf";
             $pdf_path = __DIR__ . "/../assets/surat_kontrol/" . $pdf_filename;
-            $pdf->Output('F', $pdf_path);
+            try {
+                $pdf->Output('F', $pdf_path);
+            } catch (Exception $e) {
+                $pdf_path = null;
+                $pdf_filename = null;
+            }
 
             // Kirim ke WhatsApp via Fonnte API
             $message = "Halo *$nama_pasien*,\n\nBerikut adalah Surat Kontrol Anda dari *Klinik Gigi Anggeraja*.\nJadwal kontrol berikutnya: *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.\n\nHarap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami! 🙏";
-            sendWA($no_wa, $message, $pdf_path, $pdf_filename);
+            @sendWA($no_wa, $message, $pdf_path, $pdf_filename);
         }
     }
 
