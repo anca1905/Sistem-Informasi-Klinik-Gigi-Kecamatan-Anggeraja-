@@ -21,7 +21,7 @@ if ($jenis == 'antrian') {
     $query = mysqli_query($koneksi, "SELECT * FROM antrian WHERE DATE(waktu_daftar) BETWEEN '$tgl_awal' AND '$tgl_akhir' ORDER BY waktu_daftar ASC");
 } elseif ($jenis == 'kunjungan_berikutnya' || $tab == 'kontrol') {
     $judul = "LAPORAN JADWAL KUNJUNGAN BERIKUTNYA (KONTROL)" . ($tanggal ? " TANGGAL " . date('d-m-Y', strtotime($tanggal)) : "");
-    $where = $tanggal ? "WHERE DATE(rm.kunjungan_berikutnya) = '$tanggal'" : "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya != ''";
+    $where = $tanggal ? "WHERE DATE(rm.kunjungan_berikutnya) = '$tanggal'" : "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya > '1970-01-01'";
     $query = mysqli_query($koneksi, "
         SELECT rm.*, p.kode_pasien, p.nama AS nama_pasien, p.no_telepon, d.nama_dokter
         FROM rekam_medis rm 

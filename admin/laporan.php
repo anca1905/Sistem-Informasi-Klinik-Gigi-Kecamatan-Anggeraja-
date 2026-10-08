@@ -50,7 +50,7 @@ $query_trx = mysqli_query($koneksi, "
 ");
 
 // ---- Query Jadwal Kontrol ----
-$where_kontrol = "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya != '0000-00-00' AND rm.kunjungan_berikutnya != ''";
+$where_kontrol = "WHERE rm.kunjungan_berikutnya IS NOT NULL AND rm.kunjungan_berikutnya > '1970-01-01'";
 if ($filter_tgl != '') {
     $tgl_safe3 = mysqli_real_escape_string($koneksi, $filter_tgl);
     $where_kontrol .= " AND DATE(rm.kunjungan_berikutnya) = '$tgl_safe3'";
