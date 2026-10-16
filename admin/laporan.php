@@ -67,6 +67,9 @@ $query_kontrol = mysqli_query($koneksi, "
 // Total pendapatan hari itu
 $q_sum = mysqli_query($koneksi, "SELECT SUM(biaya) as total FROM transaksi WHERE status_bayar='Lunas'" . ($filter_tgl ? " AND DATE(tanggal_transaksi)='$filter_tgl'" : ""));
 $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
+
+// ---- Query Pasien ----
+$query_pasien = mysqli_query($koneksi, "SELECT * FROM pasien ORDER BY id DESC");
 ?>
 <?php include "../layout/header.php" ?>
 
@@ -126,7 +129,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                 class="btn" style="background:#064e3b;color:white;margin-left:auto;">
                 <i class="fas fa-print"></i> Cetak Jadwal Kontrol
             </a>
-        <?php elseif ($tab == 'pasien'): ?>
+        <?php elseif ($tab == 'pasien' && mysqli_num_rows($query_pasien) > 0): ?>
             <a href="cetak_laporan.php?tab=pasien&tanggal=<?php echo urlencode($filter_tgl); ?>" target="_blank"
                 class="btn" style="background:#064e3b;color:white;margin-left:auto;">
                 <i class="fas fa-print"></i> Cetak Daftar Pasien
@@ -169,7 +172,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                                 <td style="color:#059669;font-weight:500;"><?php echo htmlspecialchars($row['tindakan'] ?? '-'); ?></td>
                             </tr>
                         <?php endwhile; ?>
-                    <?php elseif ($tab == 'pembayaran'): ?>
+                    <?php else: ?>
                         <tr>
                             <td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;">
                                 <i class="fas fa-file-medical-alt" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
@@ -232,7 +235,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                                 <td>
                                     <?php if ($row['status_bayar'] == 'Lunas'): ?>
                                         <span class="badge badge-done">Lunas</span>
-                                    <?php elseif ($tab == 'pembayaran'): ?>
+                                    <?php else: ?>
                                         <span class="badge badge-waiting">Belum Bayar</span>
                                     <?php endif; ?>
                                 </td>
@@ -247,6 +250,16 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
                         </tr>
                     <?php endif; ?>
                 </tbody>
+                <?php if (mysqli_num_rows($query_trx) > 0): ?>
+                    <tfoot>
+                        <tr style="font-weight: 700; background: #f9fafb; border-top: 2px solid #e5e7eb;">
+                            <td colspan="4" style="text-align: right; padding: 12px 16px; color:#374151;">Total Biaya (Lunas):</td>
+                            <td colspan="3" style="color: #065f46; font-size: 1.05rem; padding: 12px 16px;">
+                                Rp <?php echo number_format($total_lunas, 0, ',', '.'); ?>
+                            </td>
+                        </tr>
+                    </tfoot>
+                <?php endif; ?>
             </table>
         </div>
     </div>
@@ -309,19 +322,7 @@ $total_lunas = mysqli_fetch_assoc($q_sum)['total'] ?? 0;
             </table>
         </div>
     </div>
-<?php elseif ($tab == 'pasien'): 
-    // ---- Query Pasien ----
-    $where_pasien = '';
-    if ($filter_tgl != '') {
-        // Asumsi kita menggunakan tanggal_lahir atau tidak menggunakan filter tanggal untuk pasien. 
-        // Jika tidak relevan, kita bisa skip filter_tgl untuk pasien atau menggunakan tanggal registrasi jika ada.
-        // Karena tidak ada tanggal registrasi di kolom, kita tampilkan semua atau biarkan filter kosong.
-    }
-    $query_pasien = mysqli_query($koneksi, "
-        SELECT * FROM pasien 
-        ORDER BY id DESC
-    ");
-?>
+<?php elseif ($tab == 'pasien'): ?>
     <!-- ===== TAB PASIEN ===== -->
     <div class="table-container">
         <div class="table-header">

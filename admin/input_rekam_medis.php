@@ -70,42 +70,33 @@ if (isset($_POST['simpan_rm'])) {
         $no_wa = $d_pasien['no_telepon'];
 
         if ($no_wa) {
-            // Generate PDF menggunakan FPDF
-            require_once('../assets/fpdf/fpdf.php');
-            $pdf = new FPDF();
-            $pdf->AddPage();
-            $pdf->SetFont('Arial', 'B', 16);
-            $pdf->Cell(190, 10, 'SURAT KONTROL KLINIK GIGI ANGGERAJA', 0, 1, 'C');
-            $pdf->Ln(10);
-            $pdf->SetFont('Arial', '', 12);
-            $pdf->Cell(50, 10, 'Nama Pasien', 0, 0);
-            $pdf->Cell(5, 10, ':', 0, 0);
-            $pdf->Cell(100, 10, $nama_pasien, 0, 1);
-            $pdf->Cell(50, 10, 'Tanggal Periksa', 0, 0);
-            $pdf->Cell(5, 10, ':', 0, 0);
-            $pdf->Cell(100, 10, date('d-m-Y', strtotime($tgl)), 0, 1);
-            $pdf->Cell(50, 10, 'Jadwal Kontrol', 0, 0);
-            $pdf->Cell(5, 10, ':', 0, 0);
-            $pdf->Cell(100, 10, date('d-m-Y', strtotime($tgl_kunjungan_kembali)), 0, 1);
-            $pdf->Ln(10);
-            $pdf->MultiCell(190, 10, "Harap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami.");
-            
             // Buat folder jika belum ada
             if (!is_dir('../assets/surat_kontrol')) {
                 @mkdir('../assets/surat_kontrol', 0777, true);
             }
-            $pdf_filename = "Surat_Kontrol_" . str_replace(" ", "_", $nama_pasien) . "_" . time() . ".pdf";
-            $pdf_path = __DIR__ . "/../assets/surat_kontrol/" . $pdf_filename;
+
+            // Generate Gambar Surat Kontrol (PNG)
+            $safe_nama_pasien = preg_replace('/[^a-zA-Z0-9_-]/', '_', $nama_pasien);
+            $img_filename = "Surat_Kontrol_" . $safe_nama_pasien . "_" . time() . ".png";
+            $img_path = __DIR__ . "/../assets/surat_kontrol/" . $img_filename;
+            
             try {
-                $pdf->Output('F', $pdf_path);
+                createSuratKontrolImage(
+                    $nama_pasien, 
+                    date('d-m-Y', strtotime($tgl)), 
+                    date('d-m-Y', strtotime($tgl_kunjungan_kembali)), 
+                    $diagnosa, 
+                    'drg. Syamsuriah', 
+                    $img_path
+                );
             } catch (Exception $e) {
-                $pdf_path = null;
-                $pdf_filename = null;
+                $img_path = null;
+                $img_filename = null;
             }
 
-            // Kirim ke WhatsApp via Fonnte API
-            $message = "Halo *$nama_pasien*,\n\nBerikut adalah Surat Kontrol Anda dari *Klinik Gigi Anggeraja*.\nJadwal kontrol berikutnya: *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.\n\nHarap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami! 🙏";
-            @sendWA($no_wa, $message, $pdf_path, $pdf_filename);
+            // Kirim ke WhatsApp via Fonnte API sebagai GAMBAR
+            $message = "Halo *$nama_pasien*,\n\nBerikut adalah *Surat Jadwal Kontrol* Anda dari *Klinik Gigi Anggeraja*.\nJadwal kontrol berikutnya: *" . date('d-m-Y', strtotime($tgl_kunjungan_kembali)) . "*.\n\nHarap datang kembali pada tanggal jadwal kontrol yang tertera. Terima kasih atas kepercayaan Anda kepada kami! 🙏";
+            @sendWA($no_wa, $message, $img_path, $img_filename);
         }
     }
 

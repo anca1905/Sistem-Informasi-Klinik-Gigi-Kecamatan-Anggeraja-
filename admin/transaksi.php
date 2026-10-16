@@ -166,6 +166,16 @@ $jml_belum = mysqli_fetch_assoc($q_belum)['jml'] ?? 0;
                     </tr>
                 <?php endif; ?>
             </tbody>
+            <?php if (mysqli_num_rows($query) > 0): ?>
+                <tfoot>
+                    <tr style="font-weight: 700; background: #f9fafb; border-top: 2px solid #e5e7eb;">
+                        <td colspan="5" style="text-align: right; padding: 12px 16px; color:#374151;">Total Biaya (Lunas):</td>
+                        <td colspan="4" style="color: #065f46; font-size: 1.05rem; padding: 12px 16px;">
+                            Rp <?php echo number_format($total_pendapatan, 0, ',', '.'); ?>
+                        </td>
+                    </tr>
+                </tfoot>
+            <?php endif; ?>
         </table>
     </div>
 </div>

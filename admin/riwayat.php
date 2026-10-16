@@ -73,13 +73,10 @@ $nama_petugas = $_SESSION['login_user'];
                         </td>
 
                         <td>
-                            <?php if (!empty($row['kunjungan_berikutnya']) && !empty($row['nama_pasien'])) { ?>
-                                <a href="cetak_surat_kunjungan.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-primary" style="background:#2563eb; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size: 0.85rem;">
-                                    <i class="fas fa-print"></i> Cetak Surat
-                                </a>
-                            <?php } else { ?>
-                                <span style="color: #9ca3af; font-size: 0.85rem;">-</span>
-                            <?php } ?>
+                            <a href="cetak_surat_kunjungan.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-primary" style="background:#064e3b; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size: 0.82rem; font-weight:600;">
+                                <i class="<?php echo !empty($row['kunjungan_berikutnya']) ? 'fas fa-calendar-check' : 'fas fa-file-medical'; ?>"></i>
+                                <?php echo !empty($row['kunjungan_berikutnya']) ? 'Surat Kontrol' : 'Resume Medis'; ?>
+                            </a>
                         </td>
                     </tr>
                 <?php } ?>
