@@ -68,12 +68,6 @@ if (isset($_POST['simpan_transaksi'])) {
     }
 
     if ($insert) {
-        // Sinkronkan biaya ke rekam_medis jika ada
-        if (!empty($_POST['id_rekam_medis'])) {
-            $id_rm_sync = intval($_POST['id_rekam_medis']);
-            mysqli_query($koneksi, "UPDATE rekam_medis SET biaya='$biaya' WHERE id='$id_rm_sync'");
-        }
-
         if ($status_bayar == 'Lunas') {
             header("location:cetak_struk_bayar.php?id=$id_baru");
         } else {

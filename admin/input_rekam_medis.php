@@ -59,11 +59,11 @@ if (isset($_POST['simpan_rm'])) {
         mysqli_query($koneksi, "UPDATE antrian SET id_pasien = '$id_pasien' WHERE id = '$id_antrian'");
     }
 
-    // 2. Simpan ke tabel rekam_medis (termasuk biaya)
+    // 2. Simpan ke tabel rekam_medis
     if ($tgl_kunjungan_kembali) {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, biaya, kunjungan_berikutnya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$biaya', '$tgl_kunjungan_kembali')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$tgl_kunjungan_kembali')");
     } else {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, biaya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$biaya')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep')");
     }
     $id_rm_baru = mysqli_insert_id($koneksi);
 

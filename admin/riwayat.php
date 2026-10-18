@@ -45,7 +45,12 @@ $nama_petugas = $_SESSION['login_user'];
             </thead>
             <tbody>
                 <?php
-                $query = mysqli_query($koneksi, "SELECT * FROM rekam_medis ORDER BY id DESC");
+                $query = mysqli_query($koneksi, "
+                    SELECT rm.*, t.biaya 
+                    FROM rekam_medis rm 
+                    LEFT JOIN transaksi t ON t.id_rekam_medis = rm.id 
+                    ORDER BY rm.id DESC
+                ");
                 while ($row = mysqli_fetch_array($query)) {
                 ?>
                     <tr>

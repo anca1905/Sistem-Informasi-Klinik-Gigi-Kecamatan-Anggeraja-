@@ -23,12 +23,6 @@ if (isset($_POST['konfirmasi'])) {
 
     mysqli_query($koneksi, "UPDATE transaksi SET status_bayar='Lunas', metode_bayar='$metode', biaya='$biaya' WHERE id_transaksi='$id'");
 
-    // Sinkronkan ke rekam medis jika terhubung
-    if (!empty($trx['id_rekam_medis'])) {
-        $id_rm_sync = (int)$trx['id_rekam_medis'];
-        mysqli_query($koneksi, "UPDATE rekam_medis SET biaya='$biaya' WHERE id='$id_rm_sync'");
-    }
-
     header("location:cetak_struk_bayar.php?id=$id");
     exit();
 }
