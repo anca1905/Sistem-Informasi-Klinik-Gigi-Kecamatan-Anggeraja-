@@ -50,13 +50,30 @@ if (isset($_POST['simpan_transaksi'])) {
 
     $id_rm_val = ($id_rekam_medis === 'NULL') ? 'NULL' : "'$id_rekam_medis'";
 
-    $insert = mysqli_query($koneksi, "
-        INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, metode_bayar, status_bayar)
-        VALUES ('$id_antrian', $id_rm_val, '$nama_pasien', '$tindakan', '$biaya', '$metode_bayar', '$status_bayar')
-    ");
+    $cek_ada = mysqli_query($koneksi, "SELECT id_transaksi FROM transaksi WHERE id_antrian='$id_antrian' LIMIT 1");
+    if (mysqli_num_rows($cek_ada) > 0) {
+        $trx_row = mysqli_fetch_assoc($cek_ada);
+        $id_baru = $trx_row['id_transaksi'];
+        $insert = mysqli_query($koneksi, "
+            UPDATE transaksi 
+            SET id_rekam_medis = $id_rm_val, nama_pasien = '$nama_pasien', tindakan = '$tindakan', biaya = '$biaya', metode_bayar = '$metode_bayar', status_bayar = '$status_bayar'
+            WHERE id_transaksi = '$id_baru'
+        ");
+    } else {
+        $insert = mysqli_query($koneksi, "
+            INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, metode_bayar, status_bayar)
+            VALUES ('$id_antrian', $id_rm_val, '$nama_pasien', '$tindakan', '$biaya', '$metode_bayar', '$status_bayar')
+        ");
+        $id_baru = mysqli_insert_id($koneksi);
+    }
 
     if ($insert) {
-        $id_baru = mysqli_insert_id($koneksi);
+        // Sinkronkan biaya ke rekam_medis jika ada
+        if (!empty($_POST['id_rekam_medis'])) {
+            $id_rm_sync = intval($_POST['id_rekam_medis']);
+            mysqli_query($koneksi, "UPDATE rekam_medis SET biaya='$biaya' WHERE id='$id_rm_sync'");
+        }
+
         if ($status_bayar == 'Lunas') {
             header("location:cetak_struk_bayar.php?id=$id_baru");
         } else {

@@ -38,6 +38,7 @@ $nama_petugas = $_SESSION['login_user'];
                     <th>Keluhan</th>
                     <th>Diagnosa Dokter</th>
                     <th>Resep Obat</th>
+                    <th>Biaya</th>
                     <th>Tgl Kembali</th>
                     <th>Aksi</th>
                 </tr>
@@ -60,6 +61,10 @@ $nama_petugas = $_SESSION['login_user'];
 
                         <td style="color: #059669; font-weight: 500;">
                             <?php echo $row['resep_obat']; ?>
+                        </td>
+
+                        <td style="font-weight: 600; color: #065f46; white-space: nowrap;">
+                            Rp <?php echo number_format($row['biaya'] ?? 0, 0, ',', '.'); ?>
                         </td>
 
                         <td>

@@ -18,7 +18,17 @@ if (!$trx) {
 
 if (isset($_POST['konfirmasi'])) {
     $metode = mysqli_real_escape_string($koneksi, $_POST['metode_bayar']);
-    mysqli_query($koneksi, "UPDATE transaksi SET status_bayar='Lunas', metode_bayar='$metode' WHERE id_transaksi='$id'");
+    $biaya  = isset($_POST['biaya']) ? (float)str_replace(['.', ','], ['', ''], $_POST['biaya']) : (float)$trx['biaya'];
+    if ($biaya < 0) $biaya = 0;
+
+    mysqli_query($koneksi, "UPDATE transaksi SET status_bayar='Lunas', metode_bayar='$metode', biaya='$biaya' WHERE id_transaksi='$id'");
+
+    // Sinkronkan ke rekam medis jika terhubung
+    if (!empty($trx['id_rekam_medis'])) {
+        $id_rm_sync = (int)$trx['id_rekam_medis'];
+        mysqli_query($koneksi, "UPDATE rekam_medis SET biaya='$biaya' WHERE id='$id_rm_sync'");
+    }
+
     header("location:cetak_struk_bayar.php?id=$id");
     exit();
 }
@@ -50,8 +60,8 @@ if (isset($_POST['konfirmasi'])) {
                 <td><?php echo htmlspecialchars($trx['tindakan'] ?? '-'); ?></td>
             </tr>
             <tr>
-                <td style="padding:5px 0;color:#6b7280;">Total Biaya</td>
-                <td style="font-size:1.3rem;font-weight:700;color:#059669;">
+                <td style="padding:5px 0;color:#6b7280;">Biaya Pemeriksaan</td>
+                <td style="font-size:1.2rem;font-weight:700;color:#059669;" id="label-biaya">
                     Rp <?php echo number_format($trx['biaya'], 0, ',', '.'); ?>
                 </td>
             </tr>
@@ -59,6 +69,14 @@ if (isset($_POST['konfirmasi'])) {
     </div>
 
     <form method="POST">
+        <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Total Biaya (Rp)</label>
+            <input type="text" name="biaya" id="input_biaya" class="form-control"
+                value="<?php echo number_format($trx['biaya'], 0, ',', '.'); ?>"
+                oninput="formatBiaya(this); updateLabel(this.value);" required>
+            <small style="color:#6b7280;font-size:0.8rem;display:block;margin-top:4px;">*Otomatis terisi dari hasil pemeriksaan dokter, dapat disesuaikan jika perlu.</small>
+        </div>
+
         <div class="form-group">
             <label class="form-label">Metode Pembayaran</label>
             <select name="metode_bayar" class="form-control" required>
@@ -70,7 +88,7 @@ if (isset($_POST['konfirmasi'])) {
 
         <div style="background:#fef3c7;padding:15px;border-radius:8px;margin-bottom:20px;font-size:.875rem;color:#92400e;">
             <i class="fas fa-info-circle"></i>
-            Klik <strong>"Konfirmasi Lunas"</strong> untuk menandai pembayaran ini sebagai LUNAS dan mencetak struk.
+            Klik <strong>"Konfirmasi Lunas & Cetak Struk"</strong> untuk menandai transaksi ini sebagai LUNAS dan mencetak bukti pembayaran.
         </div>
 
         <div style="display:flex;gap:12px;">
@@ -80,5 +98,16 @@ if (isset($_POST['konfirmasi'])) {
         </div>
     </form>
 </div>
+
+<script>
+    function formatBiaya(input) {
+        let val = input.value.replace(/\D/g, '');
+        input.value = val ? val.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+    }
+
+    function updateLabel(val) {
+        document.getElementById('label-biaya').innerText = 'Rp ' + (val || '0');
+    }
+</script>
 
 <?php include "../layout/footer.php" ?>

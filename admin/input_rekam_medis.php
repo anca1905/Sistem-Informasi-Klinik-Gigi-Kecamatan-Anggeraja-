@@ -25,6 +25,11 @@ if (!$data) {
     exit();
 }
 
+// Cek apakah transaksi sudah ada sebelumnya (untuk nilai awal biaya)
+$q_trx_old = mysqli_query($koneksi, "SELECT * FROM transaksi WHERE id_antrian = '$id_antrian' LIMIT 1");
+$data_trx_old = mysqli_fetch_assoc($q_trx_old);
+$biaya_val = ($data_trx_old && $data_trx_old['biaya'] > 0) ? number_format($data_trx_old['biaya'], 0, ',', '.') : '';
+
 // Jika tombol Simpan ditekan
 if (isset($_POST['simpan_rm'])) {
     $nama_pasien = mysqli_real_escape_string($koneksi, $data['nama_pendaftar']);
@@ -32,6 +37,9 @@ if (isset($_POST['simpan_rm'])) {
     $diagnosa    = mysqli_real_escape_string($koneksi, $_POST['diagnosa']);
     $tindakan    = !empty($_POST['tindakan']) ? mysqli_real_escape_string($koneksi, $_POST['tindakan']) : $diagnosa;
     $resep       = mysqli_real_escape_string($koneksi, $_POST['resep']);
+    $biaya_raw   = isset($_POST['biaya']) ? $_POST['biaya'] : '0';
+    $biaya       = (float)str_replace(['.', ','], ['', ''], $biaya_raw);
+    if ($biaya < 0) $biaya = 0;
     $tgl         = date('Y-m-d');
     $id_dokter   = !empty($data['id_dokter']) ? (int)$data['id_dokter'] : 'NULL';
 
@@ -51,18 +59,18 @@ if (isset($_POST['simpan_rm'])) {
         mysqli_query($koneksi, "UPDATE antrian SET id_pasien = '$id_pasien' WHERE id = '$id_antrian'");
     }
 
-    // 2. Simpan ke tabel rekam_medis
+    // 2. Simpan ke tabel rekam_medis (termasuk biaya)
     if ($tgl_kunjungan_kembali) {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, kunjungan_berikutnya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$tgl_kunjungan_kembali')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, biaya, kunjungan_berikutnya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$biaya', '$tgl_kunjungan_kembali')");
     } else {
-        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep')");
+        $insert = mysqli_query($koneksi, "INSERT INTO rekam_medis (id_pasien, id_dokter, nama_pasien, tanggal_periksa, keluhan, diagnosa, tindakan, resep_obat, biaya) VALUES ('$id_pasien', $id_dokter, '$nama_pasien', '$tgl', '$keluhan', '$diagnosa', '$tindakan', '$resep', '$biaya')");
     }
     $id_rm_baru = mysqli_insert_id($koneksi);
 
-    // 2. Update status antrian jadi 'Selesai'
+    // 3. Update status antrian jadi 'Selesai'
     $update = mysqli_query($koneksi, "UPDATE antrian SET status='Selesai' WHERE id='$id_antrian'");
 
-    // 3. Buat Surat Kontrol PDF & Kirim WhatsApp
+    // 4. Buat Surat Kontrol PDF & Kirim WhatsApp
     if ($tgl_kunjungan_kembali) {
         // Ambil data pasien untuk nomor WA
         $q_pasien = mysqli_query($koneksi, "SELECT no_telepon FROM pasien WHERE id='$id_pasien'");
@@ -100,17 +108,21 @@ if (isset($_POST['simpan_rm'])) {
         }
     }
 
-    // 4. Buat transaksi otomatis (status Belum Bayar) lalu arahkan sesuai role
+    // 5. Buat atau update transaksi otomatis (status Belum Bayar) dengan total biaya dari dokter
     if ($insert && $update) {
         $cek_trx = mysqli_query($koneksi, "SELECT id_transaksi FROM transaksi WHERE id_antrian='$id_antrian' LIMIT 1");
         if (mysqli_num_rows($cek_trx) == 0) {
-            mysqli_query($koneksi, "INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, status_bayar) VALUES ('$id_antrian', '$id_rm_baru', '$nama_pasien', '$tindakan', 0, 'Belum Bayar')");
+            mysqli_query($koneksi, "INSERT INTO transaksi (id_antrian, id_rekam_medis, nama_pasien, tindakan, biaya, status_bayar) VALUES ('$id_antrian', '$id_rm_baru', '$nama_pasien', '$tindakan', '$biaya', 'Belum Bayar')");
+        } else {
+            $trx_exist = mysqli_fetch_assoc($cek_trx);
+            $id_trx_exist = $trx_exist['id_transaksi'];
+            mysqli_query($koneksi, "UPDATE transaksi SET id_rekam_medis='$id_rm_baru', nama_pasien='$nama_pasien', tindakan='$tindakan', biaya='$biaya' WHERE id_transaksi='$id_trx_exist'");
         }
         if (isset($_SESSION['role']) && $_SESSION['role'] == 'Dokter') {
             header("location:antrian.php?status=selesai_periksa");
             exit();
         } else {
-            header("location:tambah_transaksi.php?id_antrian=$id_antrian");
+            header("location:transaksi.php?status=Belum+Bayar");
             exit();
         }
     } else {
@@ -262,27 +274,36 @@ if (isset($_POST['simpan_rm'])) {
             </div>
 
             <div class="form-group">
-                <label>Resep Obat (Jika Ada)</label>
+                <label><i class="fas fa-pills"></i> Resep Obat (Jika Ada)</label>
                 <textarea name="resep" rows="3" placeholder="Contoh: Asam Mefenamat 500mg (3x1), Amoxicillin 500mg (3x1)..."></textarea>
             </div>
 
             <div class="form-group">
-                <label>Tanggal Kunjungan Kembali / Jadwal Kontrol (Opsional)</label>
+                <label><i class="fas fa-money-bill-wave" style="color: #10b981;"></i> Total Biaya Pemeriksaan & Tindakan (Rp)</label>
+                <input type="text" name="biaya" id="biaya" placeholder="Contoh: 150.000" value="<?php echo htmlspecialchars($biaya_val); ?>" oninput="formatBiaya(this)" required>
+                <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">*Masukkan total biaya perawatan/obat agar langsung tercatat dan tidak nol di transaksi kasir.</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> Tanggal Kunjungan Kembali / Jadwal Kontrol (Opsional)</label>
                 <input type="date" name="tgl_kunjungan_kembali" title="Jika pasien harus kembali, tentukan tanggalnya di sini.">
             </div>
 
-            <div style="margin-top: 30px;">
+            <div style="margin-top: 30px; display: flex; gap: 10px; align-items: center;">
                 <a href="antrian.php" class="btn-back">Batal</a>
                 <button type="submit" name="simpan_rm" class="btn-submit">
-                    <i class="fas fa-tooth"></i> Simpan Perawatan
-                </button>
-            </div>
                     <i class="fas fa-tooth"></i> Simpan Perawatan
                 </button>
             </div>
         </form>
     </div>
 
+    <script>
+        function formatBiaya(input) {
+            let val = input.value.replace(/\D/g, '');
+            input.value = val ? val.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        }
+    </script>
 </body>
 
 </html>
