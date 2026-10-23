@@ -56,9 +56,7 @@
                 <a href="transaksi.php" class="menu-link <?php echo (in_array($current_page, ['transaksi.php', 'tambah_transaksi.php', 'konfirmasi_bayar.php', 'cetak_struk_bayar.php'])) ? 'active' : ''; ?>">
                     <i class="fas fa-cash-register"></i> Transaksi
                 </a>
-                <a href="whatsapp.php" class="menu-link <?php echo (in_array($current_page, ['whatsapp.php', 'wa_bot.php'])) ? 'active' : ''; ?>">
-                    <i class="fab fa-whatsapp"></i> WhatsApp Gateway
-                </a>
+                <!-- Menu WhatsApp Gateway disembunyikan dari sidebar. Akses langsung via link: admin/whatsapp.php -->
                 <a href="riwayat.php" class="menu-link <?php echo ($current_page == 'riwayat.php') ? 'active' : ''; ?>">
                     <i class="fas fa-history"></i> Riwayat Rekam Medis
                 </a>
