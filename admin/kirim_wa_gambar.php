@@ -50,8 +50,10 @@ $fonnte_response = null;
 
 if (!empty($token) && !empty($nomor_wa)) {
     $res = sendWA($nomor_wa, $pesan, $filepath, $filename);
-    $sent_via_fonnte = true;
     $fonnte_response = is_string($res) ? json_decode($res, true) : $res;
+    if (is_array($fonnte_response) && !empty($fonnte_response['status']) && ($fonnte_response['status'] === true || $fonnte_response['status'] === 'true' || $fonnte_response['status'] == 1)) {
+        $sent_via_fonnte = true;
+    }
 }
 
 echo json_encode([

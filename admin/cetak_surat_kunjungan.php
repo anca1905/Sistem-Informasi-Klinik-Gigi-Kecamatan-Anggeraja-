@@ -90,6 +90,7 @@ if ($has_kontrol) {
     <meta charset="UTF-8">
     <title><?php echo $has_kontrol ? 'Surat Kontrol' : 'Resume Medis'; ?> - <?php echo htmlspecialchars($nama_pasien); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -157,6 +158,15 @@ if ($has_kontrol) {
 
         .btn-img:hover {
             background: #1d4ed8;
+        }
+
+        .btn-copy {
+            background: #4b5563;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #374151;
         }
 
         .btn-wa {
@@ -272,6 +282,7 @@ if ($has_kontrol) {
             <a href="riwayat.php" class="btn-action btn-back"><i class="fas fa-arrow-left"></i> Kembali</a>
             <button onclick="window.print()" class="btn-action btn-print"><i class="fas fa-print"></i> Cetak Dokumen</button>
             <button onclick="unduhGambar()" class="btn-action btn-img"><i class="fas fa-image"></i> Unduh Gambar (PNG)</button>
+            <button onclick="salinGambarManual()" class="btn-action btn-copy"><i class="fas fa-copy"></i> Salin Gambar</button>
             <button onclick="bagikanWhatsAppGambar()" class="btn-action btn-wa"><i class="fab fa-whatsapp"></i> Bagikan Gambar ke WhatsApp</button>
         </div>
 
@@ -367,6 +378,25 @@ if ($has_kontrol) {
             });
         }
 
+        // Helper untuk menyalin canvas ke clipboard sistem
+        async function copyCanvasToClipboard(canvas) {
+            if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                return false;
+            }
+            try {
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Konversi canvas gagal')), 'image/png');
+                });
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                return true;
+            } catch (err) {
+                console.warn('Gagal salin ke clipboard:', err);
+                return false;
+            }
+        }
+
         async function unduhGambar() {
             const btn = document.querySelector('.btn-img');
             const oldHtml = btn.innerHTML;
@@ -385,6 +415,51 @@ if ($has_kontrol) {
             } finally {
                 btn.innerHTML = oldHtml;
                 btn.disabled = false;
+            }
+        }
+
+        async function salinGambarManual() {
+            const btn = document.querySelector('.btn-copy');
+            const oldHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyalin...';
+                btn.disabled = true;
+            }
+
+            try {
+                const canvas = await captureSuratCanvas();
+                const success = await copyCanvasToClipboard(canvas);
+                if (success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tersalin!',
+                            text: 'Gambar surat berhasil disalin ke Clipboard! Sekarang Anda bisa langsung menempelkannya (Ctrl + V) di chat WhatsApp Web atau Microsoft Word.',
+                            confirmButtonColor: '#10b981',
+                            timer: 3500
+                        });
+                    } else {
+                        alert('✅ Gambar surat berhasil disalin ke Clipboard! Tekan Ctrl + V di WhatsApp.');
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Proteksi Browser (HTTP)',
+                            html: 'Browser membatasi izin salin gambar otomatis ke clipboard pada koneksi lokal non-HTTPS.<br><br><b>Solusi Mudah:</b> Silakan gunakan tombol <b>"Unduh Gambar (PNG)"</b>, lalu seret / drag & drop file tersebut ke chat WhatsApp!',
+                            confirmButtonColor: '#10b981'
+                        });
+                    } else {
+                        alert('Browser membatasi salin clipboard otomatis. Silakan gunakan tombol Unduh Gambar dan seret ke chat WhatsApp.');
+                    }
+                }
+            } catch (err) {
+                alert('Gagal menyalin gambar: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.innerHTML = oldHtml;
+                    btn.disabled = false;
+                }
             }
         }
 
@@ -407,31 +482,21 @@ if ($has_kontrol) {
             btn.disabled = true;
 
             try {
+                // 1. Render dokumen surat menjadi gambar (Canvas)
                 const canvas = await captureSuratCanvas();
                 const dataUrl = canvas.toDataURL('image/png');
 
-                // 1. Salin Gambar ke Clipboard (Bisa langsung di-Paste / Ctrl+V di WhatsApp Web)
-                if (navigator.clipboard && window.ClipboardItem) {
-                    try {
-                        canvas.toBlob(async function(blob) {
-                            if (blob) {
-                                await navigator.clipboard.write([
-                                    new ClipboardItem({ 'image/png': blob })
-                                ]);
-                            }
-                        }, 'image/png');
-                    } catch (clipErr) {
-                        console.log('Clipboard write note: ', clipErr);
-                    }
-                }
+                // 2. Coba salin gambar ke Clipboard langsung saat dokumen masih memiliki fokus
+                const copiedToClipboard = await copyCanvasToClipboard(canvas);
 
-                // 2. Unduh otomatis file gambar agar pengguna memiliki file PNG-nya
+                // 3. Unduh otomatis file gambar PNG ke komputer pengguna
+                const fileName = 'Surat_RekamMedis_<?php echo preg_replace('/[^a-zA-Z0-9_-]/', '_', $nama_pasien); ?>.png';
                 const dlLink = document.createElement('a');
                 dlLink.href = dataUrl;
-                dlLink.download = 'Surat_RekamMedis_<?php echo preg_replace('/[^a-zA-Z0-9_-]/', '_', $nama_pasien); ?>.png';
+                dlLink.download = fileName;
                 dlLink.click();
 
-                // 3. Kirim via backend jika Fonnte Gateway aktif
+                // 4. Periksa apakah Fonnte WhatsApp Gateway aktif untuk kirim gambar otomatis di background
                 let sentViaFonnte = false;
                 try {
                     const formData = new FormData();
@@ -456,13 +521,82 @@ if ($has_kontrol) {
                 btn.disabled = false;
 
                 if (sentViaFonnte) {
-                    alert('✅ Gambar Surat Rekam Medis berhasil dikirim langsung ke WhatsApp pasien via Fonnte Gateway!');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Terkirim Otomatis!',
+                            text: 'Gambar Surat Rekam Medis berhasil dikirim langsung ke WhatsApp pasien via Fonnte Gateway.',
+                            confirmButtonColor: '#10b981'
+                        });
+                    } else {
+                        alert('✅ Gambar Surat Rekam Medis berhasil dikirim langsung ke WhatsApp pasien via Fonnte Gateway!');
+                    }
                 } else {
                     const textMsg = <?php echo json_encode($pesan_wa); ?>;
                     const waUrl = "https://api.whatsapp.com/send?phone=" + encodeURIComponent(phone) + "&text=" + encodeURIComponent(textMsg);
-                    window.open(waUrl, '_blank');
 
-                    alert('📸 GAMBAR REKAM MEDIS BERHASIL DIBUAT!\n\n1. Gambar telah otomatis diunduh & disalin ke clipboard.\n2. Di chat WhatsApp Web yang terbuka, tekan Ctrl + V (Tempel) untuk mengirim gambar ke pasien.');
+                    if (typeof Swal !== 'undefined') {
+                        let statusBadge = '';
+                        let instruksi = '';
+
+                        if (copiedToClipboard) {
+                            statusBadge = `
+                                <div style="background:#ecfdf5;color:#065f46;padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;border:1px solid #a7f3d0;text-align:left;">
+                                    <strong>✅ Gambar Berhasil Disalin ke Clipboard!</strong><br>
+                                    File gambar juga telah otomatis terunduh (<b>${fileName}</b>).
+                                </div>
+                            `;
+                            instruksi = `
+                                <b>Langkah Kirim di WhatsApp Web:</b><br>
+                                1. Klik tombol hijau <b>"Buka WhatsApp Web"</b> di bawah.<br>
+                                2. Di kolom chat obrolan WhatsApp, tekan <b>Ctrl + V</b> (Paste) lalu kirim.<br>
+                                <small style="color:#6b7280;"><i>(Alternatif: Jika Ctrl+V tidak merespon di WhatsApp Anda, cukup <b>Tarik/Drag</b> file gambar yang baru terunduh langsung ke chat).</i></small>
+                            `;
+                        } else {
+                            statusBadge = `
+                                <div style="background:#eff6ff;color:#1e40af;padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;border:1px solid #bfdbfe;text-align:left;">
+                                    <strong>📥 File Gambar Berhasil Terunduh!</strong><br>
+                                    Tersimpan di folder Download: <b>${fileName}</b>
+                                </div>
+                            `;
+                            instruksi = `
+                                <b>Cara Mengirim ke WhatsApp:</b><br>
+                                1. Klik tombol hijau <b>"Buka WhatsApp Web"</b> di bawah.<br>
+                                2. <b>Tarik (Drag & Drop)</b> file gambar yang barusan terunduh langsung ke dalam obrolan chat WhatsApp.<br>
+                                3. Atau klik ikon <b>(+) Lampiran</b> di WhatsApp Web &rarr; pilih <b>Foto & Video</b>.
+                            `;
+                        }
+
+                        Swal.fire({
+                            title: 'Siap Dikirim ke WhatsApp',
+                            html: `
+                                ${statusBadge}
+                                <div style="text-align:left;font-size:13.5px;color:#374151;line-height:1.6;margin-bottom:14px;">
+                                    ${instruksi}
+                                </div>
+                                <div style="border-top:1px dashed #e5e7eb;padding-top:10px;margin-top:10px;">
+                                    <img src="${dataUrl}" style="max-width:100%;max-height:170px;border-radius:6px;border:1px solid #d1d5db;box-shadow:0 2px 6px rgba(0,0,0,0.06);" />
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fab fa-whatsapp"></i> Buka WhatsApp Web',
+                            cancelButtonText: 'Tutup',
+                            confirmButtonColor: '#10b981',
+                            cancelButtonColor: '#6b7280',
+                            width: '560px'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.open(waUrl, '_blank');
+                            }
+                        });
+                    } else {
+                        window.open(waUrl, '_blank');
+                        if (copiedToClipboard) {
+                            alert('📸 Gambar berhasil disalin ke clipboard dan terunduh!\n\nTekan Ctrl + V di chat WhatsApp Web untuk menempel gambar.');
+                        } else {
+                            alert('📸 Gambar berhasil terunduh!\n\nSilakan tarik (drag & drop) file gambar yang baru terunduh ke chat WhatsApp Web.');
+                        }
+                    }
                 }
             } catch (err) {
                 btn.innerHTML = oldHtml;
