@@ -7,6 +7,11 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
     exit();
 }
 
+if ($_SESSION['role'] != 'Manajer Klinik' && $_SESSION['role'] != 'Manajer') {
+    header("location:dashboard.php");
+    exit();
+}
+
 // Ambil data dari Form Filter
 $jenis = isset($_GET['jenis']) ? $_GET['jenis'] : '';
 $tab = isset($_GET['tab']) ? $_GET['tab'] : '';

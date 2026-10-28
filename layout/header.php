@@ -74,7 +74,7 @@
                 </a>
             <?php endif; ?>
 
-            <?php if ($role_active == 'Admin' || $role_active == 'Manajer Klinik'): ?>
+            <?php if ($role_active == 'Manajer Klinik' || $role_active == 'Manajer'): ?>
                 <a href="laporan.php" class="menu-link <?php echo ($current_page == 'laporan.php') ? 'active' : ''; ?>">
                     <i class="fas fa-file-alt"></i> Laporan
                 </a>

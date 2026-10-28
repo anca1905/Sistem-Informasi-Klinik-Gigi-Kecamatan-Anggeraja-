@@ -7,7 +7,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] != "login") {
     exit();
 }
 
-if ($_SESSION['role'] != 'Admin' && $_SESSION['role'] != 'Manajer Klinik') {
+if ($_SESSION['role'] != 'Manajer Klinik' && $_SESSION['role'] != 'Manajer') {
     header("location:dashboard.php");
     exit();
 }
