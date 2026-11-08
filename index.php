@@ -427,7 +427,10 @@
                 <a href="#" class="nav-link">Beranda</a>
                 <a href="#layanan" class="nav-link">Layanan</a>
                 <a href="#jadwal" class="nav-link">Jadwal Dokter</a>
-                <a href="auth/login.php" class="btn-login">Login Staff</a>
+                <a href="ambil_antrian.php" class="nav-link">Ambil Antrian</a>
+                <a href="cek_antrian.php" class="nav-link">Cek Antrian</a>
+                <a href="portal_pasien.php" class="nav-link" style="color:#059669; font-weight:600;"><i class="fas fa-user-circle"></i> Akun Pasien</a>
+                <a href="auth/login.php" class="btn-login">Login Petugas</a>
             </div>
 
             <div class="hamburger" id="hamburger">

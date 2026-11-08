@@ -28,10 +28,13 @@ if (isset($_POST['update'])) {
     $nik     = mysqli_real_escape_string($koneksi, trim($_POST['nik']));
     $alamat  = mysqli_real_escape_string($koneksi, trim($_POST['alamat']));
     $telp    = mysqli_real_escape_string($koneksi, trim($_POST['no_telepon']));
+    $pass    = mysqli_real_escape_string($koneksi, trim($_POST['password']));
+
+    $pass_sql = !empty($pass) ? ", password='$pass'" : "";
 
     mysqli_query($koneksi, "UPDATE pasien SET 
         nama='$nama', tanggal_lahir='$tgl_l', jenis_kelamin='$jenis',
-        nik='$nik', alamat='$alamat', no_telepon='$telp'
+        nik='$nik', alamat='$alamat', no_telepon='$telp' $pass_sql
         WHERE id=$id");
 
     header("location:data_pasien.php");
@@ -73,8 +76,13 @@ if (isset($_POST['update'])) {
                 <input type="text" name="nik" value="<?php echo htmlspecialchars($ambil['nik'] ?? ''); ?>">
             </div>
             <div class="form-group">
-                <label>No. Telepon</label>
+                <label>No. Telepon / WhatsApp</label>
                 <input type="text" name="no_telepon" value="<?php echo htmlspecialchars($ambil['no_telepon'] ?? ''); ?>">
+            </div>
+            <div class="form-group form-group-full">
+                <label>Password Akun Pasien</label>
+                <input type="text" name="password" placeholder="Kosongkan jika tidak ingin mengubah password akun (default: 123456)">
+                <small style="color:#6b7280; font-size:12px; margin-top:4px; display:block;">Digunakan pasien untuk login ke Portal Pasien.</small>
             </div>
             <div class="form-group form-group-full">
                 <label>Alamat</label>

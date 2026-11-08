@@ -84,3 +84,10 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 -- ============================================================
 -- SELESAI
 -- ============================================================
+
+
+-- ------------------------------------------------------------
+-- 8. Tambah kolom password di tabel PASIEN (Akun Pasien)
+-- ------------------------------------------------------------
+ALTER TABLE `pasien`
+  ADD COLUMN `password` VARCHAR(255) NULL DEFAULT '123456' AFTER `no_telepon`;

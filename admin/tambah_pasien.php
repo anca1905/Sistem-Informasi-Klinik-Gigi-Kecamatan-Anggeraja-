@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nik     = mysqli_real_escape_string($koneksi, trim($_POST['nik']));
     $alamat  = mysqli_real_escape_string($koneksi, trim($_POST['alamat']));
     $telp    = mysqli_real_escape_string($koneksi, trim($_POST['no_telepon']));
+    $pass    = !empty($_POST['password']) ? mysqli_real_escape_string($koneksi, trim($_POST['password'])) : '123456';
 
     if (empty($nama)) {
         $pesan = 'Nama pasien tidak boleh kosong.';
@@ -27,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $total = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM pasien")) + 1;
         $kode_rm = 'RM' . str_pad($total, 4, '0', STR_PAD_LEFT);
 
-        mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, nik, alamat, no_telepon)
-            VALUES ('$kode_rm', '$nama', '$tgl_l', '$jenis', '$nik', '$alamat', '$telp')");
+        mysqli_query($koneksi, "INSERT INTO pasien (kode_pasien, nama, tanggal_lahir, jenis_kelamin, nik, alamat, no_telepon, password)
+            VALUES ('$kode_rm', '$nama', '$tgl_l', '$jenis', '$nik', '$alamat', '$telp', '$pass')");
 
         header("location:data_pasien.php");
         exit();
@@ -71,8 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="text" name="nik" placeholder="Nomor Induk Kependudukan">
             </div>
             <div class="form-group">
-                <label>No. Telepon</label>
+                <label>No. Telepon / WhatsApp</label>
                 <input type="text" name="no_telepon" placeholder="08xxxxxxxxxx">
+            </div>
+            <div class="form-group form-group-full">
+                <label>Password Akun Pasien</label>
+                <input type="text" name="password" value="123456" placeholder="Password login portal pasien">
+                <small style="color:#6b7280; font-size:12px; margin-top:4px; display:block;">Default password: 123456</small>
             </div>
             <div class="form-group form-group-full">
                 <label>Alamat</label>
